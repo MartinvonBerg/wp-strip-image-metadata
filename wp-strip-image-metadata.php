@@ -29,19 +29,22 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-// TODO: add size setting even for admin page 
-// TODO: make same handling for webp and jpeg
-// TODO: extract webp metadata
+// TODO: add size setting even for admin page and process it correctly.
+// TODO: make same handling for webp and jpeg, depending on size limit.
+// - strip all metadata completely
+// - strip all but keep copyright and other from template files. do only if template is provided so check before. If not available : strip nothing
+// -     exif: copyright and colorspace. whatelse? Orientation.
+// - strip nothing (useless setting. Default for test only). So show metadata only
+// - do the defined strip for sizes below limit only.
+
 // TODO: handle files not in standard directory
-// TODO: remove exiv2 but archive before.
-// Todo: provide different images.
+// Todo: provide different images as template for webp.
+// TODO: test upload manager
 
 namespace com\samiff;
 
-use Exception;
-use Exiv2\Exiv2ImageExplorer;
-
-require_once __DIR__ . '/php-exiv2-master/exiv2.php';
+require_once __DIR__ . '/inc/extractMetadata.php';
+require_once __DIR__ . '/inc/implode_all.php';
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -616,10 +619,6 @@ class WP_Strip_Image_Metadata {
 				$path = wp_get_original_image_path( $post );
 				$exif = false;
 
-				$photo = new Exiv2ImageExplorer($path);
-				//$newmeta = $photo->getMetadata(Exiv2ImageExplorer::PM_TRANSLATED_EXIF);
-				$theVersion = $photo->getExiv2Version();
-
 				if ( $is_image && $mime === 'image/jpeg' ) {
 
 					try {
@@ -635,17 +634,20 @@ class WP_Strip_Image_Metadata {
 
 				} elseif ( $is_image && $mime === 'image/webp' ) {
 					$exif = 'image is webp: no exif metadata extracted.';
+					$exif = \com\samiff\getWebpMetadata( $path);
 				}
 
-				if ( $exif ) {
+				if ( $exif ) { // TODO: show in any case
+					$exifAsStringLength = \strlen( \com\samiff\implode_all( ' ', $exif ) );
+
 					add_action(
 						'admin_notices',
-						function () use ( $exif, $theVersion ) {
+						function () use ( $exif, $exifAsStringLength ) {
 							?>
 					<div class="notice notice-info is-dismissible">
 						<details style="padding-top:8px;padding-bottom:8px;">
 							<summary>
-								<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data : ' . $theVersion, 'wp-strip-image-metadata' ); ?>
+								<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ' . $exifAsStringLength, 'wp-strip-image-metadata' ); ?>
 							</summary>
 						<div>
 							<?php
