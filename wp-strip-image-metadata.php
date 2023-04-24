@@ -29,6 +29,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+// TODO: add size setting even for admin page 
+// TODO: make same handling for webp and jpeg
+// TODO: extract webp metadata
+// TODO: handle files not in standard directory
+// TODO: remove exiv2 but archive before.
+// Todo: provide different images.
+
 namespace com\samiff;
 
 use Exception;
@@ -176,6 +183,15 @@ class WP_Strip_Image_Metadata {
 		);
 
 		add_settings_field(
+			'wp_strip_image_metadata_setting_sizelimit',
+			__( 'Set Size Limit', 'wp-strip-image-metadata' ),
+			array( __CLASS__, 'setting_output' ),
+			'wp_strip_image_metadata',
+			'wp_strip_image_metadata_settings_section',
+			'sizelimit',
+		);
+
+		add_settings_field(
 			'wp_strip_image_metadata_setting_logging',
 			__( 'Log Errors', 'wp-strip-image-metadata' ),
 			array( __CLASS__, 'setting_output' ),
@@ -198,6 +214,7 @@ class WP_Strip_Image_Metadata {
 			'preserve_icc'         => 'enabled',
 			'preserve_orientation' => 'enabled',
 			'logging'              => 'disabled',
+			'sizelimit'            => 300,
 		);
 	}
 
@@ -299,17 +316,6 @@ class WP_Strip_Image_Metadata {
 	 * @return string|false The supported image library to use, or false if no support found.
 	 */
 	public static function has_supported_image_library() {
-		// Test for Gmagick support.
-		$gmagick = false;
-
-		if ( extension_loaded( 'gmagick' ) && class_exists( 'Gmagick', false ) ) {
-			$gmagick = true;
-		}
-
-		if ( $gmagick ) {
-			return 'Gmagick';
-		}
-
 		// Test for Imagick support.
 		$imagick = false;
 
@@ -319,6 +325,17 @@ class WP_Strip_Image_Metadata {
 
 		if ( $imagick ) {
 			return 'Imagick';
+		}
+
+		// Test for Gmagick support.
+		$gmagick = false;
+
+		if ( extension_loaded( 'gmagick' ) && class_exists( 'Gmagick', false ) ) {
+			$gmagick = true;
+		}
+
+		if ( $gmagick ) {
+			return 'Gmagick';
 		}
 
 		return false;
@@ -379,7 +396,14 @@ class WP_Strip_Image_Metadata {
 	 * @return null
 	 */
 	public static function strip_image_metadata( $file ) {
-		$mime = '';
+		$mime = mime_content_type( $file );
+		// Check for supported file type.
+		if ( ! in_array( $mime, self::$image_file_types, true ) ) {
+			return;
+		} elseif ( $mime === 'image/jpg') {
+			$mime = 'image/jpeg';
+		}
+
 		$img_lib = self::has_supported_image_library();
 		if ( ! $img_lib ) {
 			return;
@@ -389,130 +413,153 @@ class WP_Strip_Image_Metadata {
 		$preserve_icc         = array_key_exists( 'preserve_icc', $settings ) ? $settings['preserve_icc'] : 'enabled';
 		$preserve_orientation = array_key_exists( 'preserve_orientation', $settings ) ? $settings['preserve_orientation'] : 'enabled';
 
-		// Using the Imagick library.
-		if ( $img_lib === 'Imagick' ) {
-			try {
-				$imagick = new \Imagick( $file );
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while opening image path using Imagick: ' . $e->getMessage() );
-			}
+		//$copy_string = $imagick->getImageProperty('EXIF:Copyright'); // $imagick->setImageProperty('EXIF:Copyright', $copy_string) Ist das die Copyright Notice?
+		//$make = $imagick->getImageProperty('EXIF:Make');
+		//$exifArray = $imagick->getImageProperties("exif:*"); // $exifArray["exif:ApertureValue"] $exifArray["exif:Artist"] $exifArray["exif:ExposureTime"] $exifArray["exif:FNumber"] $exifArray["exif:FocalLength"] $exifArray["exif:FocalLengthIn35mmFilm"]
+		//$exifArray["exif:LensMake"] $exifArray["exif:LensModel"] $exifArray["exif:Make"] $exifArray["exif:Model"] $exifArray["exif:ShutterSpeedValue"]
+		// $exifArray["exif:GPSAltitude"] $exifArray["exif:GPSAltitudeRef"] $exifArray["exif:GPSDateStamp"] $exifArray["exif:GPSImgDirection"] $exifArray["exif:GPSImgDirectionRef"] $exifArray["exif:GPSInfo"] $exifArray["exif:GPSLatitude"] $exifArray["exif:GPSLatitudeRef"] $exifArray["exif:GPSTimeStamp"] $exifArray["exif:GPSLongitude"] $exifArray["exif:GPSLongitudeRef"]
+		// creator SEO : https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata?hl=de
 
-			$icc_profile = null;
-			$orientation = null;
-
-			// Capture ICC profile if preferred.
-			if ( $preserve_icc === 'enabled' ) {
+		// Using the Imagick or Gmagick library for jpegs.
+		if ( $mime === 'image/jpeg') {
+			if ( $img_lib === 'Imagick' ) {
 				try {
-					$icc_profile = $imagick->getImageProfile( 'icc' );
-				} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-					// May not be set, ignore.
-				}
-			}
-
-			$copy_string = $imagick->getImageProperty('EXIF:Copyright'); // $imagick->setImageProperty('EXIF:Copyright', $copy_string) Ist das die Copyright Notice?
-			$make = $imagick->getImageProperty('EXIF:Make');
-			$exifArray = $imagick->getImageProperties("exif:*"); // $exifArray["exif:ApertureValue"] $exifArray["exif:Artist"] $exifArray["exif:ExposureTime"] $exifArray["exif:FNumber"] $exifArray["exif:FocalLength"] $exifArray["exif:FocalLengthIn35mmFilm"]
-			//$exifArray["exif:LensMake"] $exifArray["exif:LensModel"] $exifArray["exif:Make"] $exifArray["exif:Model"] $exifArray["exif:ShutterSpeedValue"]
-			// $exifArray["exif:GPSAltitude"] $exifArray["exif:GPSAltitudeRef"] $exifArray["exif:GPSDateStamp"] $exifArray["exif:GPSImgDirection"] $exifArray["exif:GPSImgDirectionRef"] $exifArray["exif:GPSInfo"] $exifArray["exif:GPSLatitude"] $exifArray["exif:GPSLatitudeRef"] $exifArray["exif:GPSTimeStamp"] $exifArray["exif:GPSLongitude"] $exifArray["exif:GPSLongitudeRef"]
-			// creator SEO : https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata?hl=de
-
-			// Capture image orientation if preferred.
-			if ( $preserve_orientation === 'enabled' ) {
-				try {
-					$orientation = $imagick->getImageOrientation();
-				} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-					// May not be set, ignore.
-				}
-			}
-
-			// Strip the metadata.
-			try {
-				$imagick->stripImage();
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage() );
-			}
-
-			// Add back $icc_profile if present.
-			if ( $icc_profile ) {
-				try {
-					$imagick->setImageProfile( 'icc', $icc_profile );
+					$imagick = new \Imagick( $file );
 				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage() );
+					self::logger( 'WP Strip Image Metadata: error while opening image path using Imagick: ' . $e->getMessage() );
 				}
-			}
 
-			// Add back $orientation if present.
-			if ( $orientation ) {
+				$icc_profile = null;
+				$orientation = null;
+
+				// Capture ICC profile if preferred.
+				if ( $preserve_icc === 'enabled' ) {
+					try {
+						$icc_profile = $imagick->getImageProfile( 'icc' );
+					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// May not be set, ignore.
+					}
+				}
+
+				// Capture image orientation if preferred.
+				if ( $preserve_orientation === 'enabled' ) {
+					try {
+						$orientation = $imagick->getImageOrientation();
+					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// May not be set, ignore.
+					}
+				}
+
+				// Strip the metadata.
 				try {
-					$imagick->setImageOrientation( $orientation );
+					$imagick->stripImage();
 				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
+					self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage() );
 				}
-			}
 
-			// Overwrite the image file path, including any metadata modifications made.
-			try {
-				$imagick->writeImage( $file );
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage() );
-			}
-
-			// Free $imagick object.
-			$imagick->clear();
-
-		} elseif ( $img_lib === 'Gmagick' ) {
-			// Using the Gmagick library.
-
-			try {
-				$gmagick = new \Gmagick( $file );
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while opening image path using Gmagick: ' . $e->getMessage() );
-			}
-
-			$icc_profile = null;
-			// $orientation = null; @todo: currently not capturing orientation via Gmagick.
-
-			// Capture ICC profile if preferred.
-			if ( $preserve_icc === 'enabled' ) {
-				try {
-					$icc_profile = $gmagick->getimageprofile( 'icc' );
-				} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-					// May not be set, ignore.
+				// Add back $icc_profile if present.
+				if ( $icc_profile ) {
+					try {
+						$imagick->setImageProfile( 'icc', $icc_profile );
+					} catch ( \Exception $e ) {
+						self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage() );
+					}
 				}
-			}
 
-			// Capture image orientation if preferred.
-			// @todo Unlike Imagick, there isn't an equivalent getImageOrientation() helper.
-			// Check into grabbing the orientation a different way.
+				// Add back $orientation if present.
+				if ( $orientation !== null ) {
+					try {
+						$imagick->setImageOrientation( $orientation );
+					} catch ( \Exception $e ) {
+						self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
+					}
+				}
 
-			// Strip the metadata.
-			try {
-				$gmagick->stripimage();
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Gmagick: ' . $e->getMessage() );
-			}
-
-			// Add back $icc_profile if present.
-			if ( $icc_profile ) {
+				// Overwrite the image file path, including any metadata modifications made.
 				try {
-					$gmagick->setimageprofile( 'icc', $icc_profile );
+					$imagick->writeImage( $file );
 				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Gmagick: ' . $e->getMessage() );
+					self::logger( 'WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage() );
 				}
+
+				// Free $imagick object.
+				$imagick->clear();
+
+			} elseif ( $img_lib === 'Gmagick' ) {
+				// Using the Gmagick library.
+
+				try {
+					$gmagick = new \Gmagick( $file );
+				} catch ( \Exception $e ) {
+					self::logger( 'WP Strip Image Metadata: error while opening image path using Gmagick: ' . $e->getMessage() );
+				}
+
+				$icc_profile = null;
+				// $orientation = null; @todo: currently not capturing orientation via Gmagick.
+
+				// Capture ICC profile if preferred.
+				if ( $preserve_icc === 'enabled' ) {
+					try {
+						$icc_profile = $gmagick->getimageprofile( 'icc' );
+					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// May not be set, ignore.
+					}
+				}
+
+				// Capture image orientation if preferred.
+				// @todo Unlike Imagick, there isn't an equivalent getImageOrientation() helper.
+				// Check into grabbing the orientation a different way.
+
+				// Strip the metadata.
+				try {
+					$gmagick->stripimage();
+				} catch ( \Exception $e ) {
+					self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Gmagick: ' . $e->getMessage() );
+				}
+
+				// Add back $icc_profile if present.
+				if ( $icc_profile ) {
+					try {
+						$gmagick->setimageprofile( 'icc', $icc_profile );
+					} catch ( \Exception $e ) {
+						self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Gmagick: ' . $e->getMessage() );
+					}
+				}
+
+				// Add back $orientation if present.
+				// @todo: currently not capturing orientation via Gmagick.
+
+				// Overwrite the image file path, including any metadata modifications made.
+				try {
+					$gmagick->writeimage( $file );
+				} catch ( \Exception $e ) {
+					self::logger( 'WP Strip Image Metadata: error while overwriting image file using Gmagick: ' . $e->getMessage() );
+				}
+
+				// Free $gmagick object.
+				$gmagick->destroy();
 			}
+		} else {
+			if ( $img_lib === 'Imagick' ) {
+				// Open the copyright image with the correct EXIF data
+				$path = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp';
+				if (! \file_exists( $path)) {
+					return;
+				}
 
-			// Add back $orientation if present.
-			// @todo: currently not capturing orientation via Gmagick.
+				$cr = new \Imagick(__DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp');
 
-			// Overwrite the image file path, including any metadata modifications made.
-			try {
-				$gmagick->writeimage( $file );
-			} catch ( \Exception $e ) {
-				self::logger( 'WP Strip Image Metadata: error while overwriting image file using Gmagick: ' . $e->getMessage() );
+				// Open the image to alter and get its size
+				$im = new \Imagick($file);
+				$d = $im->getImageGeometry(); 
+				$w = $d['width']; 
+				$h = $d['height']; 
+			
+				// Resize the copyright and composite the image over the top
+				$cr->resizeImage($w,$h,\imagick::FILTER_POINT,0,0);
+				$cr->compositeImage($im,\imagick::COMPOSITE_SRCOVER ,0,0);
+				$cr->writeImage($file);
 			}
-
-			// Free $gmagick object.
-			$gmagick->destroy();
 		}
 	}
 
