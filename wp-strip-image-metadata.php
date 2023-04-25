@@ -71,8 +71,8 @@ class WP_Strip_Image_Metadata {
 		'image/jpeg',
 		'image/webp'
 	);
-	public static $sizeLimit = 151;
-	public static $keepCopyright = false;
+	public static $sizeLimit = 120;
+	public static $keepCopyright = true;
 	public static $setColourSpaceToRGB = false;
 
 	/**
@@ -560,10 +560,10 @@ class WP_Strip_Image_Metadata {
 			if ( $img_lib === 'Imagick' ) {
 
 				// Open the copyright image with the correct EXIF data
-				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp';
-				
-				if ( ! \file_exists( $pathToTemplateFile ) && $keepCopyrightOnly ) {
-					self::logger( 'WP Strip Image Metadata: File '. $pathToTemplateFile . ' not found ');
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
+
+				if (!\file_exists($pathToTemplateFile) && $keepCopyrightOnly) {
+					self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found and tried to keep the Copyrigth only. ');
 					return;
 				}
 
@@ -598,7 +598,7 @@ class WP_Strip_Image_Metadata {
 								}
 							}
 
-							// Capture image orientation if preferred.
+							// Capture image orientation if preferred. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined, so it is not written.
 							if ( $preserve_orientation === 'enabled' ) {
 								try {
 									$orientation = $imageFile->getImageOrientation();
@@ -615,7 +615,7 @@ class WP_Strip_Image_Metadata {
 							}
 
 							// Add back $icc_profile if present.
-							if ( $icc_profile ) {
+							if ( $icc_profile !== null) {
 								try {
 									$imageFile->setImageProfile( 'icc', $icc_profile );
 								} catch ( \Exception $e ) {
@@ -623,15 +623,27 @@ class WP_Strip_Image_Metadata {
 								}
 							}
 
-							// Add back $orientation if present.
-							if ( $orientation !== null ) {
+							// Add back $orientation if present. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined and 0 = false!
+							if ( $orientation ) {
 								try {
 									$imageFile->setImageOrientation( $orientation );
 								} catch ( \Exception $e ) {
 									self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
 								}
 							}
-							$imageFile->writeImage( $file );
+
+							if ( self::$keepCopyright ) {
+								$templateFile = new \Imagick(__DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp');
+								// Resize the copyright and composite the image over the top
+								$templateFile->resizeImage($width,$height,\imagick::FILTER_POINT,0,0);
+								$templateFile->compositeImage($imageFile,\imagick::COMPOSITE_SRCOVER ,0,0); // TODO get compressionValue
+								if ( $icc_profile !== null) { $templateFile->setImageProfile( 'icc', $icc_profile );}
+								if ( $orientation ) {$templateFile->setImageOrientation( $orientation );}
+								$templateFile->writeImage($file);
+								$templateFile->clear();
+							} else {
+								$imageFile->writeImage( $file );
+							}
 
 						}
 					} 
@@ -643,6 +655,9 @@ class WP_Strip_Image_Metadata {
 
 				// clear imagick
 				$imageFile->clear();
+			
+			} else {
+				self::logger( 'WP Strip Image Metadata: No Image Handler defined for webp-Files. Only Imagick works' );
 			}
 		}
 	}
