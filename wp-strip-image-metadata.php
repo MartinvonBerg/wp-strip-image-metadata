@@ -71,6 +71,9 @@ class WP_Strip_Image_Metadata {
 		'image/jpeg',
 		'image/webp'
 	);
+	public static $sizeLimit = 151;
+	public static $keepCopyright = false;
+	public static $setColourSpaceToRGB = false;
 
 	/**
 	 * Initialize plugin hooks and resources.
@@ -385,7 +388,7 @@ class WP_Strip_Image_Metadata {
 		try {
 			self::strip_image_metadata( $file['file'] );
 		} catch ( \Exception $e ) {
-			self::logger( 'Unhandled error stripping image metadata: ' . $e->getMessage() );
+			self::logger( 'WP Strip Image Metadata: Unhandled error stripping image metadata: ' . $e->getMessage() );
 		}
 
 		return $file;
@@ -400,13 +403,14 @@ class WP_Strip_Image_Metadata {
 	 */
 	public static function strip_image_metadata( $file ) {
 		$mime = mime_content_type( $file );
+
 		// Check for supported file type.
 		if ( ! in_array( $mime, self::$image_file_types, true ) ) {
 			return;
 		} elseif ( $mime === 'image/jpg') {
 			$mime = 'image/jpeg';
 		}
-
+		// check for image converter support
 		$img_lib = self::has_supported_image_library();
 		if ( ! $img_lib ) {
 			return;
@@ -415,6 +419,9 @@ class WP_Strip_Image_Metadata {
 		$settings             = self::get_plugin_settings();
 		$preserve_icc         = array_key_exists( 'preserve_icc', $settings ) ? $settings['preserve_icc'] : 'enabled';
 		$preserve_orientation = array_key_exists( 'preserve_orientation', $settings ) ? $settings['preserve_orientation'] : 'enabled';
+
+		$stripAllMeta = $preserve_icc=='disabled' && $preserve_orientation=='disabled' && ! self::$keepCopyright && ! self::$setColourSpaceToRGB;
+		$keepCopyrightOnly = $preserve_icc=='disabled' && $preserve_orientation=='disabled' && self::$keepCopyright && ! self::$setColourSpaceToRGB;
 
 		//$copy_string = $imagick->getImageProperty('EXIF:Copyright'); // $imagick->setImageProperty('EXIF:Copyright', $copy_string) Ist das die Copyright Notice?
 		//$make = $imagick->getImageProperty('EXIF:Make');
@@ -426,6 +433,7 @@ class WP_Strip_Image_Metadata {
 		// Using the Imagick or Gmagick library for jpegs.
 		if ( $mime === 'image/jpeg') {
 			if ( $img_lib === 'Imagick' ) {
+
 				try {
 					$imagick = new \Imagick( $file );
 				} catch ( \Exception $e ) {
@@ -478,9 +486,13 @@ class WP_Strip_Image_Metadata {
 					}
 				}
 
+				$dimensions = $imagick->getImageGeometry(); 
+				$width = $dimensions['width']; 
+				$height = $dimensions['height']; 
+
 				// Overwrite the image file path, including any metadata modifications made.
 				try {
-					$imagick->writeImage( $file );
+					if ( $width <= self::$sizeLimit ) {$imagick->writeImage( $file );}
 				} catch ( \Exception $e ) {
 					self::logger( 'WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage() );
 				}
@@ -489,7 +501,8 @@ class WP_Strip_Image_Metadata {
 				$imagick->clear();
 
 			} elseif ( $img_lib === 'Gmagick' ) {
-				// Using the Gmagick library.
+				// Using the Gmagick library. 
+				// TODO: add the sizeLimit if
 
 				try {
 					$gmagick = new \Gmagick( $file );
@@ -542,26 +555,94 @@ class WP_Strip_Image_Metadata {
 				// Free $gmagick object.
 				$gmagick->destroy();
 			}
-		} else {
+		} elseif ( $mime === 'image/webp') {
+
 			if ( $img_lib === 'Imagick' ) {
+
 				// Open the copyright image with the correct EXIF data
-				$path = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp';
-				if (! \file_exists( $path)) {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp';
+				
+				if ( ! \file_exists( $pathToTemplateFile ) && $keepCopyrightOnly ) {
+					self::logger( 'WP Strip Image Metadata: File '. $pathToTemplateFile . ' not found ');
 					return;
 				}
 
-				$cr = new \Imagick(__DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp');
-
 				// Open the image to alter and get its size
-				$im = new \Imagick($file);
-				$d = $im->getImageGeometry(); 
-				$w = $d['width']; 
-				$h = $d['height']; 
-			
-				// Resize the copyright and composite the image over the top
-				$cr->resizeImage($w,$h,\imagick::FILTER_POINT,0,0);
-				$cr->compositeImage($im,\imagick::COMPOSITE_SRCOVER ,0,0);
-				$cr->writeImage($file);
+				$imageFile = new \Imagick($file);
+
+				if ( ! $stripAllMeta ) {
+					$dimensions = $imageFile->getImageGeometry(); 
+					$width = $dimensions['width']; 
+					$height = $dimensions['height']; 
+				
+					if ( $width <= self::$sizeLimit  ) {
+
+						if ( $keepCopyrightOnly) {
+							$templateFile = new \Imagick(__DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp');
+							// Resize the copyright and composite the image over the top
+							$templateFile->resizeImage($width,$height,\imagick::FILTER_POINT,0,0);
+							$templateFile->compositeImage($imageFile,\imagick::COMPOSITE_SRCOVER ,0,0); // TODO get compressionValue
+							$templateFile->writeImage($file);
+							$templateFile->clear();
+
+						} else {
+							$icc_profile = null;
+							$orientation = null;
+
+							// Capture ICC profile if preferred.
+							if ( $preserve_icc === 'enabled' ) {
+								try {
+									$icc_profile = $imageFile->getImageProfile( 'icc' );
+								} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+									// May not be set, ignore.
+								}
+							}
+
+							// Capture image orientation if preferred.
+							if ( $preserve_orientation === 'enabled' ) {
+								try {
+									$orientation = $imageFile->getImageOrientation();
+								} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+									// May not be set, ignore.
+								}
+							}
+
+							// Strip the metadata.
+							try {
+								$imageFile->stripImage();
+							} catch ( \Exception $e ) {
+								self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage() );
+							}
+
+							// Add back $icc_profile if present.
+							if ( $icc_profile ) {
+								try {
+									$imageFile->setImageProfile( 'icc', $icc_profile );
+								} catch ( \Exception $e ) {
+									self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage() );
+								}
+							}
+
+							// Add back $orientation if present.
+							if ( $orientation !== null ) {
+								try {
+									$imageFile->setImageOrientation( $orientation );
+								} catch ( \Exception $e ) {
+									self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
+								}
+							}
+							$imageFile->writeImage( $file );
+
+						}
+					} 
+
+				} else {
+					$imageFile->stripImage();
+					$imageFile->writeImage( $file );
+				}
+
+				// clear imagick
+				$imageFile->clear();
 			}
 		}
 	}
@@ -626,7 +707,7 @@ class WP_Strip_Image_Metadata {
 						//$imagick = new \imagick( $path );
 						//$exifArray = $imagick->getImageProperties("exif:*");
 					} catch ( \Exception $e ) {
-						self::logger( 'WP Strip Image Metadata: error reading EXIF data: ' . $e->getMessage() );
+						self::logger( 'WP Strip Image Metadata: error reading jgp-EXIF data: ' . $e->getMessage() );
 						// neu
 						//$imagick = new \imgagick( $path );
 						//$exifArray = $imagick->getImageProperties("exif:*");
@@ -634,7 +715,13 @@ class WP_Strip_Image_Metadata {
 
 				} elseif ( $is_image && $mime === 'image/webp' ) {
 					$exif = 'image is webp: no exif metadata extracted.';
-					$exif = \com\samiff\getWebpMetadata( $path);
+
+					try {
+						$exif = \com\samiff\getWebpMetadata( $path);
+					} catch ( \Exception $e ) {
+						self::logger( 'WP Strip Image Metadata: error reading jgp-EXIF data: ' . $e->getMessage() );
+					}
+
 				}
 
 				if ( $exif ) { // TODO: show in any case
@@ -773,7 +860,7 @@ class WP_Strip_Image_Metadata {
 	 * Given an attachment ID, fetch the path for that image and all paths for generated subsizes.
 	 * Assumes that all subsizes are stored in the same directory as the passed attachment $id.
 	 *
-	 * @todo It'd be nice if there was a more accurate way to discern the path for each generated subsize.
+	 * @todo It'dimensions be nice if there was a more accurate way to discern the path for each generated subsize.
 	 *
 	 * @param int $id The attachment ID.
 	 *
