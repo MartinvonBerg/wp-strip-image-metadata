@@ -1,23 +1,21 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
  * Plugin Name: WP Strip Image Metadata (JPG + WEBP)
- * Plugin URI: https://github.com/samiff/wp-strip-image-metadata
- * Description: Strip image metadata on upload or via bulk action, and view image EXIF data.
+ * Plugin URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
+ * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
  * Version: 1.0
- * Requires at least: 6.2
+ * Requires at least: 6.1
  * Requires PHP: 7.4
- * Author: Martin von Berg and Samiff
- * Author URI: https://www.berg-reise-foto.de
- * License: GPL2+
- * License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * Author: Martin von Berg, Samiff
+ * Author URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
+ * License: GPL-2.0
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: wp-strip-image-metadata
  */
 
-// TODO: add size setting for admin page.
-// TODO: make same handling for webp and jpeg.
-// Todo: provide different images as templates for webp. sRGB is missing. 
-// TODO: add github uri
-// TODO: copy change of extractMetadata to fotorama_multi.
+// TODO: add size and keepCopyright setting for admin page.
+// TODO: save to github and add github uri. Provide Readme based on Samiff.
+// TODO: check gmagick usage and functionality or remove it completely?
 
 
 namespace mvbplugins\stripmetadata;
@@ -51,8 +49,8 @@ class WP_Strip_Image_Metadata {
 		'image/webp'
 	);
 	public static $sizeLimit = 200;
-	public static $keepCopyright = true;
-	public static $setColourSpaceToRGB = false;
+	public static $keepCopyright = true; // keep or event set copyright if not set
+	public static $setColourSpaceToRGB = false; // currently unused. Set to false therefore,
 
 	/**
 	 * Initialize plugin hooks and resources.
@@ -90,13 +88,12 @@ class WP_Strip_Image_Metadata {
 	}
 
 	/**
-	 * Function for `wp_generate_attachment_metadata` filter-hook. Strip metadata from files according to settings.
+	 * Function for `wp_rest_mediacat_upload` action-hook. Strip metadata from files according to settings after files were uploaded via rest-api. 
 	 * 
-	 * @param array  $metadata      An array of attachment meta data.
 	 * @param int    $attachment_id Current attachment ID.
-	 * @param string $context       Additional context. Can be 'create' when metadata was initially created for new attachment or 'update' when the metadata was updated.
+	 * @param string $context       context. Shall be 'context-rest-upload' when files were uploaded via rest-api.
 	 *
-	 * @return array returning unchanged $metadata
+	 * @return null
 	 */
 	public static function strip_meta_after_rest_mediacat( $attachment_id, $context ){
 		if ( $context !== 'context-rest-upload') {return;}
@@ -108,9 +105,7 @@ class WP_Strip_Image_Metadata {
 		}
 	
 	}
-
 	
-
 	/**
 	 * Register the submenu plugin item under WP Admin Settings.
 	 *
@@ -151,7 +146,7 @@ class WP_Strip_Image_Metadata {
 				echo esc_html(
 					sprintf(
 					/* translators: %s is the image processing library name and version active on the site */
-						__( 'Compatible image processing library active: %s', 'wp-strip-image-metadata' ),
+						__( 'Compatible image processing library active: %s. Gmagick with limited functionality only!', 'wp-strip-image-metadata' ),
 						$image_lib . ' ' . phpversion( $image_lib )
 					)
 				);
@@ -387,6 +382,7 @@ class WP_Strip_Image_Metadata {
 		// check for image converter support
 		$img_lib = self::has_supported_image_library();
 		if ( ! $img_lib ) {
+			self::logger( 'WP Strip Image Metadata: No Image Handler defined' );
 			return;
 		}
 
@@ -395,78 +391,8 @@ class WP_Strip_Image_Metadata {
 		$preserve_orientation = array_key_exists( 'preserve_orientation', $settings ) ? $settings['preserve_orientation'] : 'enabled';
 
 		// Using the Imagick or Gmagick library for jpegs.
-		if ( $mime === 'image/jpeg') {
-			if ( $img_lib === 'Imagick' ) {
-
-				try {
-					$imagick = new \Imagick( $file );
-				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while opening image path using Imagick: ' . $e->getMessage() );
-				}
-
-				$icc_profile = null;
-				$orientation = null;
-
-				// Capture ICC profile if preferred.
-				if ( $preserve_icc === 'enabled' ) {
-					try {
-						$icc_profile = $imagick->getImageProfile( 'icc' );
-					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-						// May not be set, ignore.
-					}
-				}
-
-				// Capture image orientation if preferred.
-				if ( $preserve_orientation === 'enabled' ) {
-					try {
-						$orientation = $imagick->getImageOrientation();
-					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-						// May not be set, ignore.
-					}
-				}
-
-				// Strip the metadata.
-				try {
-					$imagick->stripImage();
-				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage() );
-				}
-
-				// Add back $icc_profile if present.
-				if ( $icc_profile ) {
-					try {
-						$imagick->setImageProfile( 'icc', $icc_profile );
-					} catch ( \Exception $e ) {
-						self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage() );
-					}
-				}
-
-				// Add back $orientation if present.
-				if ( $orientation !== null ) {
-					try {
-						$imagick->setImageOrientation( $orientation );
-					} catch ( \Exception $e ) {
-						self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
-					}
-				}
-
-				$dimensions = $imagick->getImageGeometry(); 
-				$width = $dimensions['width']; 
-				$height = $dimensions['height']; 
-
-				// Overwrite the image file path, including any metadata modifications made.
-				try {
-					if ( $width <= self::$sizeLimit ) {$imagick->writeImage( $file );}
-				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage() );
-				}
-
-				// Free $imagick object.
-				$imagick->clear();
-
-			} elseif ( $img_lib === 'Gmagick' ) {
+		if ( $img_lib === 'Gmagick' ) {
 				// Using the Gmagick library. 
-				// TODO: add the sizeLimit if or handle size outside of if.
 
 				try {
 					$gmagick = new \Gmagick( $file );
@@ -518,119 +444,118 @@ class WP_Strip_Image_Metadata {
 
 				// Free $gmagick object.
 				$gmagick->destroy();
+
+		} elseif ( $img_lib === 'Imagick' ) {
+
+			// Open the copyright image with the correct EXIF data
+			if ($mime === 'image/jpeg') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
+			} elseif ($mime === 'image/webp') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
 			}
 
-		} elseif ( $mime === 'image/webp') {
+			if (!\file_exists($pathToTemplateFile)) {
+				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
+				return;
+			}
 
-			if ( $img_lib === 'Imagick' ) {
+			// Open the image to alter and get its size
+			$imageFile = new \Imagick($file);
+			$dimensions = $imageFile->getImageGeometry();
+			$width = $dimensions['width'];
+			$height = $dimensions['height'];
 
-				// Open the copyright image with the correct EXIF data
-				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
+			// do only for all images smaller than $sizeLimit. So $sizeLimit = 0 means no image at all. But $sizeLimit = 10000 means all images.
+			if ($width <= self::$sizeLimit) {
 
-				if (!\file_exists($pathToTemplateFile) ) {
-					self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found.');
-					return;
+				$icc_profile = null;
+				$orientation = null;
+
+				// Capture ICC profile if preferred.
+				if ($preserve_icc === 'enabled') {
+					try {
+						$icc_profile = $imageFile->getImageProfile('icc');
+					} catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// May not be set, ignore.
+					}
 				}
 
-				// Open the image to alter and get its size
-				$imageFile = new \Imagick($file);
-				$dimensions = $imageFile->getImageGeometry(); 
-				$width = $dimensions['width']; 
-				$height = $dimensions['height']; 
-				
-				// do only for all images smaller than $sizeLimit. So $sizeLimit = 0 means no image at all. But $sizeLimit = 10000 means all images.
-				if ( $width <= self::$sizeLimit  ) {
-
-					$icc_profile = null;
-					$orientation = null;
-
-					// Capture ICC profile if preferred.
-					if ( $preserve_icc === 'enabled' ) {
-						try {
-							$icc_profile = $imageFile->getImageProfile( 'icc' );
-						} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-							// May not be set, ignore.
-						}
-					}
-
-					// Capture image orientation if preferred. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined, so it is not written.
-					if ( $preserve_orientation === 'enabled' ) {
-						try {
-							$orientation = $imageFile->getImageOrientation();
-						} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-							// May not be set, ignore.
-						}
-					}
-
-					// Strip the metadata.
+				// Capture image orientation if preferred. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined, so it is not written.
+				if ($preserve_orientation === 'enabled') {
 					try {
-						$imageFile->stripImage();
-					} catch ( \Exception $e ) {
-						self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage() );
+						$orientation = $imageFile->getImageOrientation();
+					} catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// May not be set, ignore.
 					}
+				}
 
-					// Add back $icc_profile if present.
-					if ( $icc_profile !== null) {
-						try {
-							$imageFile->setImageProfile( 'icc', $icc_profile );
-						} catch ( \Exception $e ) {
-							self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage() );
-						}
+				// Strip the metadata.
+				try {
+					$imageFile->stripImage();
+				} catch (\Exception $e) {
+					self::logger('WP Strip Image Metadata: error while stripping image metadata using Imagick: ' . $e->getMessage());
+				}
+
+				// Add back $icc_profile if present.
+				if ($icc_profile !== null) {
+					try {
+						$imageFile->setImageProfile('icc', $icc_profile);
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while setting ICC profile using Imagick: ' . $e->getMessage());
 					}
+				}
 
-					// Add back $orientation if present. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined and 0 = false!
-					if ( $orientation ) {
-						try {
-							$imageFile->setImageOrientation( $orientation );
-						} catch ( \Exception $e ) {
-							self::logger( 'WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage() );
-						}
+				// Add back $orientation if present. \Imagick::ORIENTATION_UNDEFINED = 0 : is undefined and 0 = false!
+				if ($orientation) {
+					try {
+						$imageFile->setImageOrientation($orientation);
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while setting image orientation using Imagick: ' . $e->getMessage());
 					}
+				}
 
-					if ( self::$keepCopyright ) {
-						// generate image with copyright information
-						// source: https://stackoverflow.com/questions/37791236/add-copyright-string-to-jpeg-using-imagemagick-imagick-in-php
-						try {
-							$templateFile = new \Imagick(__DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR. 'copyright.webp');
+				if (self::$keepCopyright) {
+					// generate image with copyright information
+					// source: https://stackoverflow.com/questions/37791236/add-copyright-string-to-jpeg-using-imagemagick-imagick-in-php
+					try {
+						$templateFile = new \Imagick($pathToTemplateFile);
 
-							// Resize the copyright and composite the image over the top
-							$templateFile->resizeImage($width,$height,\imagick::FILTER_POINT,0,0);
+						// Resize the copyright and composite the image over the top
+						$templateFile->resizeImage($width, $height, \imagick::FILTER_POINT, 0, 0);
 
-							// Set compression Quality and generate the image
-							$compressionQual = $imageFile->getCompressionQuality();
-							$templateFile->setCompressionQuality( $compressionQual );
-							$templateFile->compositeImage($imageFile,\imagick::COMPOSITE_SRCOVER ,0,0); 
+						// Set compression Quality and generate the image
+						$compressionQual = $imageFile->getCompressionQuality();
+						$templateFile->setCompressionQuality($compressionQual);
+						$templateFile->compositeImage($imageFile, \imagick::COMPOSITE_SRCOVER, 0, 0);
 
-							// set profile and orientation
-							if ( $icc_profile !== null) { $templateFile->setImageProfile( 'icc', $icc_profile );}
-							if ( $orientation ) { $templateFile->setImageOrientation( $orientation );}
-
-							// write the new file
-							$templateFile->writeImage($file);
-							$templateFile->clear();
-
-						} catch ( \Exception $e ) {
-							self::logger( 'WP Strip Image Metadata: error while using Copyright file forwebp image file using Imagick: ' . $e->getMessage() );
+						// set profile and orientation
+						if ($icc_profile !== null) {
+							$templateFile->setImageProfile('icc', $icc_profile);
+						}
+						if ($orientation) {
+							$templateFile->setImageOrientation($orientation);
 						}
 
-					} else {
-						// Overwrite the image file path, including any metadata modifications made.
-						try {
-							$imageFile->writeImage( $file );
-						} catch ( \Exception $e ) {
-							self::logger( 'WP Strip Image Metadata: error while overwriting webp image file using Imagick: ' . $e->getMessage() );
-						}
+						// write the new file
+						$templateFile->writeImage($file);
+						$templateFile->clear();
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while using Copyright file for image file using Imagick: ' . $e->getMessage());
 					}
-
-				} 
-
-				// clear imagick
-				$imageFile->clear();
-			
-			} else {
-				self::logger( 'WP Strip Image Metadata: No Image Handler defined for webp-Files. Only Imagick works' );
+				} else {
+					// Overwrite the image file path, including any metadata modifications made.
+					try {
+						$imageFile->writeImage($file);
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage());
+					}
+				}
 			}
-		}
+			// clear imagick
+			$imageFile->clear();
+			
+		} 
+	
 	}
 
 	/**
