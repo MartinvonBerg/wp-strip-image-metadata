@@ -1,5 +1,5 @@
 <?php
-namespace com\samiff;
+namespace mvbplugins\stripmetadata;
 
 /**
  * Concatenate multidimensional-array-to-string with glue separator.

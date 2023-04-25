@@ -1,5 +1,5 @@
 <?php
-namespace com\samiff;
+namespace mvbplugins\stripmetadata;
 
 // Extract Metadata from a Webp and JPG-file. 
 const BROKEN_FILE = false; // value to store in img_metadata if error extracting metadata.
