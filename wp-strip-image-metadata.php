@@ -1,38 +1,24 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
- * Plugin Name: WP Strip Image Metadata
+ * Plugin Name: WP Strip Image Metadata (JPG + WEBP)
  * Plugin URI: https://github.com/samiff/wp-strip-image-metadata
  * Description: Strip image metadata on upload or via bulk action, and view image EXIF data.
  * Version: 1.0
- * Requires at least: 5.9
+ * Requires at least: 6.2
  * Requires PHP: 7.4
- * Author: Samiff
- * Author URI: https://samiff.com
+ * Author: Martin von Berg and Samiff
+ * Author URI: https://www.berg-reise-foto.de
  * License: GPL2+
  * License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * Text Domain: wp-strip-image-metadata
  */
 
-/*
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
-
 // TODO: add size setting for admin page.
 // TODO: make same handling for webp and jpeg.
 // Todo: provide different images as templates for webp. sRGB is missing. 
-// TODO: change namespace
+// TODO: add github uri
+// TODO: copy change of extractMetadata to fotorama_multi.
+
 
 namespace mvbplugins\stripmetadata;
 
