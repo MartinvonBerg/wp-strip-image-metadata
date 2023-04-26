@@ -14,8 +14,6 @@
  */
 
 // TODO: save to github and add github uri. Provide Readme based on Samiff.
-// TODO: check gmagick usage and functionality or remove it completely?
-// TODO: PHP version checker : PHP func : version_compare()
 
 
 namespace mvbplugins\stripmetadata;
@@ -49,6 +47,7 @@ class WP_Strip_Image_Metadata {
 		'image/jpeg',
 		'image/webp'
 	);
+	public static $versionString = '';
 
 	/**
 	 * Initialize plugin hooks and resources.
@@ -107,8 +106,8 @@ class WP_Strip_Image_Metadata {
 				echo esc_html(
 					sprintf(
 					/* translators: %s is the image processing library name and version active on the site */
-						__( 'Compatible image processing library active: %s. Gmagick with limited functionality only!', 'wp-strip-image-metadata' ),
-						$image_lib . ' ' . phpversion( $image_lib )
+						__( 'Compatible image processing library active: %s. Webp is supported. PHP-Library is: %s', 'wp-strip-image-metadata' ),
+						$image_lib . ' ' . phpversion( $image_lib ), self::$versionString
 					)
 				);
 			} else {
@@ -481,27 +480,54 @@ class WP_Strip_Image_Metadata {
 	/**
 	 * Check for a supported image processing library on the site.
 	 *
-	 * @todo Check for specific library versions.
-	 *
 	 * @return string|false The supported image library to use, or false if no support found.
 	 */
 	public static function has_supported_image_library() {
 		// Test for Imagick support.
 		$imagick = false;
+		$webpSupported = false;
+		$versionCheck = false;
+		$minVersion = '99.4.4';
 
 		if ( extension_loaded( 'imagick' ) && class_exists( 'Imagick', false ) ) {
 			$imagick = true;
+			
+			$actVersion = phpversion( 'Imagick' );
+			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
+
+			$imagick = new \Imagick();
+			$formats = $imagick->queryFormats();
+			$pos = \stripos( implode_all(' ', $formats), 'webp');
+			if ( $pos > 1) { $webpSupported = true;}
+
+			self::$versionString = $imagick->getVersion()['versionString'];
+			$imagick->clear();
+
 		}
 
-		if ( $imagick ) {
+		if ( $imagick && $webpSupported && $versionCheck ) {
 			return 'Imagick';
 		}
 
 		// Test for Gmagick support.
 		$gmagick = false;
+		$webpSupported = false;
+		$versionCheck = false;
+		$minVersion = '2.0.6';
 
 		if ( extension_loaded( 'gmagick' ) && class_exists( 'Gmagick', false ) ) {
 			$gmagick = true;
+
+			$actVersion = phpversion( 'Gmagick' );
+			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
+
+			$imagick = new \Gmagick();
+			$formats = $imagick->queryFormats();
+			$pos = \stripos( implode_all(' ', $formats), 'webp');
+			if ( $pos > 1) { $webpSupported = true;}
+
+			self::$versionString = $imagick->getVersion()['versionString'];
+			$imagick->clear();
 		}
 
 		if ( $gmagick ) {
@@ -540,23 +566,42 @@ class WP_Strip_Image_Metadata {
 		$keepCopyright		  = array_key_exists( 'set_copyright', $settings ) ? $settings['set_copyright'] : 'enabled';
 		$sizeLimit            = array_key_exists( 'sizelimit', $settings ) ? \intval( $settings['sizelimit']) : 0;
 
-		// Using the Imagick or Gmagick library for jpegs.
+		// Using the Imagick or Gmagick library for jpegs and webps.
 		if ( $img_lib === 'Gmagick' ) {
-				// Using the Gmagick library. 
+			// Using the Gmagick library. 
 
-				try {
-					$gmagick = new \Gmagick( $file );
-				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while opening image path using Gmagick: ' . $e->getMessage() );
-				}
+			// Open the copyright image with the correct EXIF data
+			if ($mime === 'image/jpeg') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
+			} elseif ($mime === 'image/webp') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
+			}
 
+			if (!\file_exists($pathToTemplateFile)) {
+				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
+				return;
+			}
+
+			// Open the image to alter and get its size
+			try {
+				$imageFile = new \Gmagick( $file );
+			} catch ( \Exception $e ) {
+				self::logger( 'WP Strip Image Metadata: error while opening image path using Gmagick: ' . $e->getMessage() );
+			};
+
+			$width = $imageFile->getimagewidth();
+			$height = $imageFile->getimageheight();
+
+			// do only for all images smaller than $sizeLimit. So $sizeLimit = 0 means no image at all. But $sizeLimit = 10000 means all images.
+			if ($width <= $sizeLimit) {
+						
 				$icc_profile = null;
 				// $orientation = null; @todo: currently not capturing orientation via Gmagick.
 
 				// Capture ICC profile if preferred.
 				if ( $preserve_icc === 'enabled' ) {
 					try {
-						$icc_profile = $gmagick->getimageprofile( 'icc' );
+						$icc_profile = $imageFile->getimageprofile( 'icc' );
 					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 						// May not be set, ignore.
 					}
@@ -568,15 +613,15 @@ class WP_Strip_Image_Metadata {
 
 				// Strip the metadata.
 				try {
-					$gmagick->stripimage();
+					$imageFile->stripimage();
 				} catch ( \Exception $e ) {
 					self::logger( 'WP Strip Image Metadata: error while stripping image metadata using Gmagick: ' . $e->getMessage() );
 				}
 
 				// Add back $icc_profile if present.
-				if ( $icc_profile ) {
+				if ( $icc_profile !== null ) {
 					try {
-						$gmagick->setimageprofile( 'icc', $icc_profile );
+						$imageFile->setimageprofile( 'icc', $icc_profile );
 					} catch ( \Exception $e ) {
 						self::logger( 'WP Strip Image Metadata: error while setting ICC profile using Gmagick: ' . $e->getMessage() );
 					}
@@ -585,15 +630,48 @@ class WP_Strip_Image_Metadata {
 				// Add back $orientation if present.
 				// @todo: currently not capturing orientation via Gmagick.
 
-				// Overwrite the image file path, including any metadata modifications made.
-				try {
-					$gmagick->writeimage( $file );
-				} catch ( \Exception $e ) {
-					self::logger( 'WP Strip Image Metadata: error while overwriting image file using Gmagick: ' . $e->getMessage() );
-				}
+				if ($keepCopyright === 'enabled') {
+					// generate image with copyright information
+					// source: https://stackoverflow.com/questions/37791236/add-copyright-string-to-jpeg-using-imagemagick-imagick-in-php
+					try {
+						$templateFile = new \Gmagick($pathToTemplateFile);
 
-				// Free $gmagick object.
-				$gmagick->destroy();
+						// Resize the copyright and composite the image over the top
+						$templateFile->resizeImage($width, $height, \Gmagick::FILTER_POINT, 1);
+
+						// Set compression Quality and generate the image
+						//$compressionQual = $imageFile->getCompressionQuality();
+						//$templateFile->setCompressionQuality($compressionQual);
+						$templateFile->compositeImage($imageFile, \Gmagick::COMPOSITE_REPLACE, 0, 0);
+
+						// set profile and orientation
+						if ($icc_profile !== null) {
+							$templateFile->setImageProfile('icc', $icc_profile);
+						}
+						//if ($orientation) {
+						//	$templateFile->setImageOrientation($orientation);
+						//}
+
+						// write the new file
+						$templateFile->writeImage($file);
+						$templateFile->destroy();
+
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while using Copyright file for image file using Imagick: ' . $e->getMessage());
+					}
+				} else {
+					// Overwrite the image file path, including any metadata modifications made.
+					try {
+						$imageFile->writeImage($file);
+					} catch (\Exception $e) {
+						self::logger('WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage());
+					}
+				}
+				
+			}
+
+			// Free $gmagick object.
+			$imageFile->destroy();
 
 		} elseif ( $img_lib === 'Imagick' ) {
 
