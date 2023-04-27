@@ -1,8 +1,10 @@
 <?php
 namespace mvbplugins\stripmetadata;
 
-// Extract Metadata from a Webp and JPG-file. 
-const BROKEN_FILE = false; // value to store in img_metadata if error extracting metadata.
+// Extract Metadata from both Webp and JPG-files. Note: The result array of the both main functions is structurally not identical.
+// Although identended this requirement was not reached. TODO for a future update. The requirement was: "The exif data a array similar to the JSON that is provided via the REST-API".
+
+const BROKEN_FILE = false; // value to store in img_metadata if error during extracting metadata.
 const MINIMUM_CHUNK_HEADER_LENGTH = 18;
 const WEBP_VERSION = '0.0.1';
 const VP8X_ICC = 32;
@@ -108,6 +110,8 @@ function getJpgMetadata( string $filename ) : array
 	$data['descr'] = $description; 
 	$data['alt'] = ''; 
 	$data['caption'] = ''; 
+	$data['copyright']  = $Exif["IFD0"]["Copyright"] ?? null;
+	$data['artist']  = $Exif["IFD0"]["Artist"] ?? null;
 	
 	return $data;
 }

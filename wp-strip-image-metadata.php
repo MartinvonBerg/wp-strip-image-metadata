@@ -4,7 +4,7 @@
  * Plugin URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
  * Version: 1.0
- * Requires at least: 6.1
+ * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg, Samiff
  * Author URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
@@ -328,7 +328,7 @@ class WP_Strip_Image_Metadata {
 				'admin_notices',
 				function () {
 					?>
-				<div class="notice notice-error">
+				<div class="notice notice-error is-dismissible">
 					<p><?php esc_html_e( 'WP Strip Image Metadata: compatible image processing library not found. This plugin requires the "Imagick" or "Gmagick" PHP extension to function - please ask your webhost or system administrator if either can be enabled.', 'wp-strip-image-metadata' ); ?></p>
 				</div>
 					<?php
@@ -388,22 +388,26 @@ class WP_Strip_Image_Metadata {
 						self::logger( 'WP Strip Image Metadata: error reading webp-EXIF data: ' . $e->getMessage() );
 					}
 
-				} else { return;}
+				} else {return;}
 
+				$allsizes = '';
 				foreach ( $paths as $key => $path) {
 					if ( $is_image && $mime === 'image/jpeg' ) {
 						$exifData = \mvbplugins\stripmetadata\getJpgMetadata( $path );
-						if ( \mvbplugins\stripmetadata\implode_all( ' ', $exifData) === " -- -- -- -- ---    0 notitle   ") {$exifData = '';}; 
+						if ( \mvbplugins\stripmetadata\implode_all( ' ', $exifData) === " -- -- -- -- ---    0 notitle     ") {$exifData = '';}; 
 					} elseif ( $is_image && $mime === 'image/webp' ) {
 						$exifData = \mvbplugins\stripmetadata\getWebpMetadata( $path );
 					}
+					$filesize = self::filesize_formatted( $path);
 					$size = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exifData ) );
-					$paths[ $key ] = 'Meta Size = ' . $size . ' of ' . $paths[ $key ];
+					$allsizes = $allsizes . $size . ' / ';
+					$paths[ $key ] = 'Meta Size: ' . strval($size) . ' and filesize: '. $filesize  .' of ' . $paths[ $key ];
 				}
 				sort( $paths );
 
 				if ( $is_image ) {
-					$exifAsStringLength = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exif ) );
+					//$exifAsStringLength = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exif ) );
+					$exifAsStringLength = rtrim($allsizes,' /') . ' Meta size in bytes.';
 					
 					add_action(
 						'admin_notices',
@@ -433,10 +437,13 @@ class WP_Strip_Image_Metadata {
 
 		// When using the custom bulk strip image metadata action, show how many images were modified.
 		$img_count = isset( $_GET['bulk_wp_strip_img_meta'] ) ? intval( $_GET['bulk_wp_strip_img_meta'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$path_count = isset( $_GET['bulk_wp_strip_overall'] ) ? intval( $_GET['bulk_wp_strip_overall'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$stripped_count = isset( $_GET['bulk_wp_strip_number_stripped'] ) ? intval( $_GET['bulk_wp_strip_number_stripped'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
 		if ( $img_count ) {
 			add_action(
 				'admin_notices',
-				function () use ( $img_count ) {
+				function () use ( $img_count, $path_count, $stripped_count ) {
 					?>
 				<div class="notice notice-success is-dismissible">
 					<p>
@@ -447,12 +454,12 @@ class WP_Strip_Image_Metadata {
 								_n(
 									'WP Strip Image Metadata: %s image including generated thumbnail sizes was processed.',
 									'WP Strip Image Metadata: %s images including generated thumbnail sizes were processed.',
-									$img_count,
+									$img_count, 
 									'wp_strip_image_metadata'
 								),
-								$img_count
+								$img_count, 
 							)
-						);
+						) . ' ' . $stripped_count . ' images of ' . $path_count . ' overall were stripped.';
 					?>
 					</p>
 				</div>
@@ -487,7 +494,7 @@ class WP_Strip_Image_Metadata {
 		$imagick = false;
 		$webpSupported = false;
 		$versionCheck = false;
-		$minVersion = '99.4.4';
+		$minVersion = '3.4.4';
 
 		if ( extension_loaded( 'imagick' ) && class_exists( 'Imagick', false ) ) {
 			$imagick = true;
@@ -513,7 +520,7 @@ class WP_Strip_Image_Metadata {
 		$gmagick = false;
 		$webpSupported = false;
 		$versionCheck = false;
-		$minVersion = '2.0.6';
+		$minVersion = '2.0.5';
 
 		if ( extension_loaded( 'gmagick' ) && class_exists( 'Gmagick', false ) ) {
 			$gmagick = true;
@@ -530,7 +537,7 @@ class WP_Strip_Image_Metadata {
 			$imagick->clear();
 		}
 
-		if ( $gmagick ) {
+		if ( $gmagick && $webpSupported && $versionCheck  ) {
 			return 'Gmagick';
 		}
 
@@ -542,10 +549,11 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @param string $file The file path (not URL) to an uploaded media item.
 	 *
-	 * @return null
+	 * @return bool the result as boolean. True on success.
 	 */
 	public static function strip_image_metadata( $file ) {
 		$mime = mime_content_type( $file );
+		$result = false;
 
 		// Check for supported file type.
 		if ( ! in_array( $mime, self::$image_file_types, true ) ) {
@@ -655,6 +663,7 @@ class WP_Strip_Image_Metadata {
 						// write the new file
 						$templateFile->writeImage($file);
 						$templateFile->destroy();
+						$result = true;
 
 					} catch (\Exception $e) {
 						self::logger('WP Strip Image Metadata: error while using Copyright file for image file using Imagick: ' . $e->getMessage());
@@ -663,9 +672,10 @@ class WP_Strip_Image_Metadata {
 					// Overwrite the image file path, including any metadata modifications made.
 					try {
 						$imageFile->writeImage($file);
+						$result = true;
 					} catch (\Exception $e) {
 						self::logger('WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage());
-					}
+					} 
 				}
 				
 			}
@@ -765,15 +775,18 @@ class WP_Strip_Image_Metadata {
 						}
 
 						// write the new file
-						$templateFile->writeImage($file);
+						$result = $templateFile->writeImage($file);
+						$result = $result === true;
 						$templateFile->clear();
+
 					} catch (\Exception $e) {
 						self::logger('WP Strip Image Metadata: error while using Copyright file for image file using Imagick: ' . $e->getMessage());
 					}
 				} else {
 					// Overwrite the image file path, including any metadata modifications made.
 					try {
-						$imageFile->writeImage($file);
+						$result = $imageFile->writeImage($file);
+						$result = $result === true;
 					} catch (\Exception $e) {
 						self::logger('WP Strip Image Metadata: error while overwriting image file using Imagick: ' . $e->getMessage());
 					}
@@ -781,6 +794,7 @@ class WP_Strip_Image_Metadata {
 			}
 			// clear imagick
 			$imageFile->clear();
+			return $result;
 			
 		} 
 	
@@ -875,12 +889,19 @@ class WP_Strip_Image_Metadata {
 			}
 		}
 
+		$nStripped = 0;
+
 		foreach ( $paths as $path ) {
-			self::strip_image_metadata( $path );
+			$success = self::strip_image_metadata( $path );
+			if ( $success) ++$nStripped;
 		}
 
+		// refine the success number
+		$nIDs = count( $ids );
+		$nPaths = count( $paths );
+
 		$redirect_url = remove_query_arg( 'bulk_wp_strip_img_meta_err', $redirect_url );
-		$redirect_url = add_query_arg( 'bulk_wp_strip_img_meta', count( $ids ), $redirect_url );
+		$redirect_url = add_query_arg( ['bulk_wp_strip_img_meta'=>$nIDs, 'bulk_wp_strip_overall'=>$nPaths, 'bulk_wp_strip_number_stripped'=> $nStripped], $redirect_url );
 		return $redirect_url;
 	}
 
@@ -946,6 +967,21 @@ class WP_Strip_Image_Metadata {
 	 */
 	public static function plugin_cleanup() {
 		delete_option( 'wp_strip_image_metadata_settings' );
+	}
+
+	/**
+	 * Provide a nicely formatted filesize.
+	 *
+	 * @source https://stackoverflow.com/questions/5501427/php-filesize-mb-kb-conversion stackoverflow-link.
+	 * @param  string $path the full file-path
+	 * @return string the nicely formatted filesize
+	 */
+	private static function filesize_formatted($path)
+	{
+		$size = filesize($path);
+		$units = array( 'B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
+		$power = $size > 0 ? floor(log($size, 1024)) : 0;
+		return number_format($size / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
 	}
 }
 
