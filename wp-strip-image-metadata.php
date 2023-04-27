@@ -14,7 +14,7 @@
  * Text Domain: wp-strip-image-metadata
  */
 
-// TODO: save to github and add github uri. Provide Readme based on Samiff.
+// TODO: save to github and add github uri. Provide Readme based on Samiff. Update Assets.
 
 
 namespace mvbplugins\stripmetadata;
@@ -89,6 +89,12 @@ class WP_Strip_Image_Metadata {
 	 */
 	public static function plugin_settings_page() {
 		$image_lib = self::has_supported_image_library();
+		$pathToCopyrightFile_webp = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
+		$pathToCopyrightFile_jpg = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
+		$exif_jpg = \is_file( $pathToCopyrightFile_jpg) ? \mvbplugins\stripmetadata\getJpgMetadata( $pathToCopyrightFile_jpg) : [];
+		$exif_webp = \is_file( $pathToCopyrightFile_webp) ? \mvbplugins\stripmetadata\getWebpMetadata( $pathToCopyrightFile_webp) : [];
+		$exif_to_print = ['artist', 'copyright', 'credit'];
+
 		?>
 		<div id="wp_strip_image_metadata" class="wrap">
 			<h1><?php esc_html_e( 'WP Strip Image Metadata', 'wp-strip-image-metadata' ); ?></h1>
@@ -115,6 +121,32 @@ class WP_Strip_Image_Metadata {
 				esc_html_e( 'WP Strip Image Metadata: compatible image processing library not found. This plugin requires the "Imagick" or "Gmagick" PHP extension to function - please ask your webhost or system administrator if either can be enabled.', 'wp-strip-image-metadata' );
 			}
 			?>
+			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
+			
+			<h4><?php esc_html_e( '- in copyright.jpg', 'wp-strip-image-metadata' ); ?></h4>
+			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_jpg) : \esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
+			<?php
+				foreach ( $exif_to_print as $key) {
+					if (\key_exists($key, $exif_jpg)) {
+						?><p><?php
+						esc_html_e( $key . ' : ' . $exif_jpg[$key] ); 
+						?></p><?php
+					}
+				};
+			?>
+			
+			<h4><?php esc_html_e( '- in copyright.webp', 'wp-strip-image-metadata' ); ?></h4>
+			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_webp) : \esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
+			<?php
+				foreach ( $exif_to_print as $key) {
+					if (\key_exists($key, $exif_webp)) {
+						?><p><?php
+						esc_html_e( $key . ' : ' . $exif_webp[$key] ); 
+						?></p><?php
+					}
+				};
+			?>
+
 		</div>
 		<?php
 	}
