@@ -14,7 +14,8 @@
  * Text Domain: wp-strip-image-metadata
  */
 
-// TODO: save to github and add github uri. Provide Readme based on Samiff. Update Assets.
+// TODO: save to github and add github uri.
+// TODO: use this https://github.com/giuscris/imageinfo. Branch before!
 
 
 namespace mvbplugins\stripmetadata;
