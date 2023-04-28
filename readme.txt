@@ -116,7 +116,10 @@ By default the plugin will process jpg/jpeg and webp files.
 -   Log Errors: whether to log error output which can be helpful for debugging purposes.
 
 == Screenshots ==
-1. SCR1
+
+1. Plugin settings page
+2. Viewing image EXIF details
+3. Bulk action for stripping image metadata
 
 == Upgrade Notice ==
 First Release. No need to upgrade now.

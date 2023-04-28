@@ -14,8 +14,10 @@
  * Text Domain: wp-strip-image-metadata
  */
 
-// TODO: save to github and add github uri.
-// TODO: use this https://github.com/giuscris/imageinfo. Branch before!
+// TODO: save to github and add github uri. Wait for response
+// TODO: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
+// TODO: clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description.
+// Note: checked this readme with https://wpreadme.com/
 
 
 namespace mvbplugins\stripmetadata;
