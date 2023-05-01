@@ -6,7 +6,7 @@ namespace mvbplugins\stripmetadata;
  * 
  * @source https://stackoverflow.com/questions/12309047/multidimensional-array-to-string multidimensional-array-to-string
  * @param  string $glue the separator for the string concetantion of array contents.
- * @param  array $arr input array
+ * @param  string|array $arr input array
  * @return string|mixed return string on success or the input if it is not a string
  */
 function implode_all( $glue, $arr ) {

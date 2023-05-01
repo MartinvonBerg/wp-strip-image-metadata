@@ -43,13 +43,19 @@ class WP_Strip_Image_Metadata {
 	 * Image file types to strip metadata from.
 	 * Modify types with the 'wp_strip_image_metadata_image_file_types' filter hook.
 	 *
-	 * @var array
+	 * @var array<string>
 	 */
 	public static $image_file_types = array(
 		'image/jpg',
 		'image/jpeg',
 		'image/webp'
 	);
+
+	/**
+	 * empty placeholder for the version
+	 *
+	 * @var string
+	 */
 	public static $versionString = '';
 
 	/**
@@ -178,7 +184,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'strip_active',
+			['strip_active'],
 		);
 
 		add_settings_field(
@@ -187,7 +193,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'preserve_icc',
+			['preserve_icc'],
 		);
 
 		add_settings_field(
@@ -196,7 +202,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'preserve_orientation',
+			['preserve_orientation'],
 		);
 		
 		add_settings_field(
@@ -205,7 +211,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'sizelimit',
+			['sizelimit'],
 		);
 		
 		add_settings_field(
@@ -214,7 +220,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'set_copyright',
+			['set_copyright'],
 		);
 
 		add_settings_field(
@@ -223,7 +229,7 @@ class WP_Strip_Image_Metadata {
 			array( __CLASS__, 'setting_output' ),
 			'wp_strip_image_metadata',
 			'wp_strip_image_metadata_settings_section',
-			'logging',
+			['logging'],
 		);
 
 		register_setting( 'wp_strip_image_metadata_settings', 'wp_strip_image_metadata_settings', $args );
@@ -232,7 +238,7 @@ class WP_Strip_Image_Metadata {
 	/**
 	 * The default plugin settings option values.
 	 *
-	 * @return array
+	 * @return array<string, int|string>
 	 */
 	public static function default_plugin_settings() {
 		return array(
@@ -261,7 +267,7 @@ class WP_Strip_Image_Metadata {
 	/**
 	 * Retrieves the plugin settings option value. Sets the option if it doesn't exist.
 	 *
-	 * @return array
+	 * @return array<string, int|string>
 	 */
 	public static function get_plugin_settings() {
 		$settings = get_option( 'wp_strip_image_metadata_settings' );
@@ -277,9 +283,9 @@ class WP_Strip_Image_Metadata {
 	/**
 	 * Sanitize the user input settings.
 	 *
-	 * @param array $input Received settings to sanitize.
+	 * @param array<string, int|string> $input Received settings to sanitize.
 	 *
-	 * @return array Sanitized settings saved.
+	 * @return array<string, int|string> Sanitized settings saved.
 	 */
 	public static function sanitize_settings( $input ) {
 		return array(
@@ -310,9 +316,9 @@ class WP_Strip_Image_Metadata {
 	 */
 	public static function setting_output( $setting ) {
 		$settings      = self::get_plugin_settings();
-		$setting_value = $settings[ $setting ];
+		$setting_value = $settings[ $setting[0] ];
 
-		if ( $setting !== 'sizelimit') {
+		if ( $setting[0] !== 'sizelimit') {
 			// Radio button options.
 			$items = array( 'enabled', 'disabled' );
 
@@ -323,7 +329,7 @@ class WP_Strip_Image_Metadata {
 							type="radio"
 							<?php echo checked( $setting_value, $item, false ); ?>
 							value="<?php echo esc_attr( $item ); ?>"
-							name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting}]" ); ?>"
+							name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
 						/>
 						<?php
 						if ( $item === 'enabled' ) {
@@ -340,8 +346,8 @@ class WP_Strip_Image_Metadata {
 			// output the number input for sizelimit.
 			?>
 			<input type="number" min="0" max="10000" step="1" 
-                name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting}]" ); ?>"
-				id="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting}]" ); ?>" 
+                name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
+				id="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>" 
 				value="<?php echo esc_attr( $setting_value ); ?>">
 			<label>Min: 0, Max: 10000. Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images.</label>
 			<?php
@@ -396,18 +402,18 @@ class WP_Strip_Image_Metadata {
 		add_action(
 			'load-post.php',
 			function () {
-				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$is_image = wp_attachment_is_image( $post );
 				$mime = \get_post_mime_type( $post );
 				$pathToOriginalImage = wp_get_original_image_path( $post );
-				$exif = false;
+				$exif = [];
 				$paths = [];
 				$paths = array_merge( $paths, self::get_all_paths_for_image( $post ) );
 
 				// sanitize jpg mime type.
 				if ( $mime === 'image/jpg') { $mime = 'image/jpeg'; }
 
-				if ( $is_image && $mime === 'image/jpeg' ) {
+				if ( $is_image && $pathToOriginalImage !== false && $mime === 'image/jpeg' ) {
 
 					try {
 						$exif = \mvbplugins\stripmetadata\getJpgMetadata( $pathToOriginalImage );
@@ -415,7 +421,7 @@ class WP_Strip_Image_Metadata {
 						self::logger( 'WP Strip Image Metadata: error reading jgp-EXIF data: ' . $e->getMessage() );
 					}
 
-				} elseif ( $is_image && $mime === 'image/webp' ) {
+				} elseif ( $is_image && $pathToOriginalImage !== false  && $mime === 'image/webp' ) {
 
 					try {
 						$exif = \mvbplugins\stripmetadata\getWebpMetadata( $pathToOriginalImage );
@@ -427,12 +433,13 @@ class WP_Strip_Image_Metadata {
 
 				$allsizes = '';
 				foreach ( $paths as $key => $path) {
-					if ( $is_image && $mime === 'image/jpeg' ) {
+					if ( $mime === 'image/jpeg' ) {
 						$exifData = \mvbplugins\stripmetadata\getJpgMetadata( $path );
 						if ( \mvbplugins\stripmetadata\implode_all( ' ', $exifData) === " -- -- -- -- ---    0 notitle     ") {$exifData = '';}; 
-					} elseif ( $is_image && $mime === 'image/webp' ) {
+					} elseif ( $mime === 'image/webp' ) {
 						$exifData = \mvbplugins\stripmetadata\getWebpMetadata( $path );
-					}
+					} else { $exifData = []; }
+	
 					$filesize = self::filesize_formatted( $path);
 					$size = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exifData ) );
 					$allsizes = $allsizes . $size . ' / ';
@@ -440,33 +447,34 @@ class WP_Strip_Image_Metadata {
 				}
 				sort( $paths );
 
-				if ( $is_image ) {
-					//$exifAsStringLength = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exif ) );
-					$exifAsStringLength = rtrim($allsizes,' /') . ' Meta size in bytes.';
-					
-					add_action(
-						'admin_notices',
-						function () use ( $exif, $exifAsStringLength, $paths ) {
-							?>
-					<div class="notice notice-info is-dismissible">
-						<details style="padding-top:8px;padding-bottom:8px;">
-							<summary>
-								<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ' . $exifAsStringLength, 'wp-strip-image-metadata' ); ?>
-							</summary>
-							<div>
-								<?php
-									echo '<pre>' . esc_html( print_r($exif) ) . '</pre>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-									foreach ( $paths as $path) {
-										echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-									}
-								?>
-							</div>
-						</details>
-					</div>
+				//$exifAsStringLength = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exif ) );
+				$exifAsStringLength = rtrim($allsizes,' /') . ' Meta size in bytes.';
+				if ( \mvbplugins\stripmetadata\implode_all( ' ', $exif) === " -- -- -- -- ---    0 notitle     ") {$exif = '';};
+				
+				add_action(
+					'admin_notices',
+					function () use ( $exif, $exifAsStringLength, $paths ) {
+						?>
+				<div class="notice notice-info is-dismissible">
+					<details style="padding-top:8px;padding-bottom:8px;">
+						<summary>
+							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ' . $exifAsStringLength, 'wp-strip-image-metadata' ); ?>
+						</summary>
+						<div>
 							<?php
-						}
-					);
-				}
+								/** @phpstan-ignore-next-line */
+								echo '<p>'; esc_html( print_r( $exif ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+								foreach ( $paths as $path) {
+									/** @phpstan-ignore-next-line */
+									echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+								}
+							?>
+						</div>
+					</details>
+				</div>
+						<?php
+					}
+				);
 			}
 		);
 
@@ -535,6 +543,7 @@ class WP_Strip_Image_Metadata {
 			$imagick = true;
 			
 			$actVersion = phpversion( 'Imagick' );
+			if ( ! $actVersion) { $actVersion = '0.0.0';}
 			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
 
 			$imagick = new \Imagick();
@@ -561,6 +570,7 @@ class WP_Strip_Image_Metadata {
 			$gmagick = true;
 
 			$actVersion = phpversion( 'Gmagick' );
+			if ( ! $actVersion) { $actVersion = '0.0.0';}
 			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
 
 			$imagick = new \Gmagick();
@@ -592,7 +602,7 @@ class WP_Strip_Image_Metadata {
 
 		// Check for supported file type.
 		if ( ! in_array( $mime, self::$image_file_types, true ) ) {
-			return;
+			return false;
 		} elseif ( $mime === 'image/jpg') {
 			$mime = 'image/jpeg';
 		}
@@ -600,7 +610,7 @@ class WP_Strip_Image_Metadata {
 		$img_lib = self::has_supported_image_library();
 		if ( ! $img_lib ) {
 			self::logger( 'WP Strip Image Metadata: No Image Handler defined' );
-			return;
+			return false;
 		}
 
 		$settings             = self::get_plugin_settings();
@@ -618,11 +628,11 @@ class WP_Strip_Image_Metadata {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
 			} elseif ($mime === 'image/webp') {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
-			}
+			} else { $pathToTemplateFile = ''; }
 
 			if (!\file_exists($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
-				return;
+				return false;
 			}
 
 			// Open the image to alter and get its size
@@ -630,6 +640,7 @@ class WP_Strip_Image_Metadata {
 				$imageFile = new \Gmagick( $file );
 			} catch ( \Exception $e ) {
 				self::logger( 'WP Strip Image Metadata: error while opening image path using Gmagick: ' . $e->getMessage() );
+				return false;
 			};
 
 			$width = $imageFile->getimagewidth();
@@ -717,6 +728,7 @@ class WP_Strip_Image_Metadata {
 
 			// Free $gmagick object.
 			$imageFile->destroy();
+			return $result;
 
 		} elseif ( $img_lib === 'Imagick' ) {
 
@@ -725,11 +737,11 @@ class WP_Strip_Image_Metadata {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
 			} elseif ($mime === 'image/webp') {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
-			}
+			} else { $pathToTemplateFile = '';}
 
 			if (!\file_exists($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
-				return;
+				return false;
 			}
 
 			// Open the image to alter and get its size
@@ -794,7 +806,7 @@ class WP_Strip_Image_Metadata {
 						$templateFile = new \Imagick($pathToTemplateFile);
 
 						// Resize the copyright and composite the image over the top
-						$templateFile->resizeImage($width, $height, \imagick::FILTER_POINT, 0, 0);
+						$templateFile->resizeImage($width, $height, \imagick::FILTER_POINT, 1.0);
 
 						// Set compression Quality and generate the image
 						$compressionQual = $imageFile->getCompressionQuality();
@@ -832,6 +844,7 @@ class WP_Strip_Image_Metadata {
 			return $result;
 			
 		} 
+		return false;
 	
 	}
 
@@ -860,7 +873,7 @@ class WP_Strip_Image_Metadata {
 	 * @param int    $attachment_id Current attachment ID.
 	 * @param string $context       context. Shall be 'context-rest-upload' when files were uploaded via rest-api.
 	 *
-	 * @return null
+	 * @return void
 	 */
 	public static function strip_meta_after_rest_mediacat( $attachment_id, $context ){
 		if ( $context !== 'context-rest-upload') {return;}
@@ -894,7 +907,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @param string $redirect_url The redirect URL.
 	 * @param string $action       The bulk action being taken.
-	 * @param array  $ids          The attachment IDs.
+	 * @param array<int>  $ids          The attachment IDs.
 	 *
 	 * @return string Redirect URL.
 	 */
@@ -948,13 +961,14 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @param int $id The attachment ID.
 	 *
-	 * @return array A unique array of image paths.
+	 * @return array<string> A unique array of image paths.
 	 */
 	public static function get_all_paths_for_image( $id ) {
 		$paths = array();
 
 		$attachment_path = wp_get_original_image_path( $id ); // The server path to the attachment.
 		$attachment_meta = wp_get_attachment_metadata( $id ); // Array that contains all the subsize file names.
+		if ( $attachment_path === false) { $attachment_path='';}
 		$dir             = dirname( $attachment_path );
 
 		$paths[] = $attachment_path; // The attachment $id path.
