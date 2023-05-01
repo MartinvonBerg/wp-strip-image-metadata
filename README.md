@@ -4,17 +4,17 @@
 This Plugin is based on the work of Samiff and the Plugin "WP Strip Image Metadata". If you are looking for a simple Plugin to strip all Metadata you should install this one. Available from the WordPress.org plugin repository here: 
 https://wordpress.org/plugins/wp-strip-image-metadata/
 
-This Plugin extend the Functionality of "WP Strip Image Metadata" with the following Functions:
+This Plugin extends the Functionality of "WP Strip Image Metadata" with the following Functions:
 
 ## Extended Functionality
 - Handle WEBP-Images, too. 
 - set / add / change Copyright, Artist or Credit Information in JPG and WEBP images Files.
-- Set a upper Size Limit for the Stripping. All Files with Width greater than Size Limit won't be stripped.
+- Set an upper Size Limit for the Stripping. All Files with Width greater than Size Limit won't be stripped.
 - Show some more Information in the Image Edit Panel
 - Set a Minimum version for Imagick (3.4.4) and Gmagick (2.0.5) to handle files at all. Gmagick is still limited in functionality.
 
 ### Preparation of Copyright Template Files
-Both Imagick and Gmagick do not allow to set EXIF-Metadata directly. The author of this plugin does not know another PHP or WordPress Function to set metadata in an Image File. So a Template File is used that has to be prepared by the user. It's only possible to use one template File for one Artist, only.
+Both Imagick and Gmagick do not allow to set EXIF-Metadata directly. The author of this plugin does not know another PHP or WordPress Function with appropriate license to set metadata in an Image File. So a Template File is used that has to be prepared by the user. It's only possible to use one template File for one Artist, only.
 > ! The Plugin uses one Template File for the whole site. So, if you are on a Multi-User-Site this Plugin is not for you.
 
 1. Prepare a JPG and WEBP File with very small size, e.g. 100x100 or so. Image dimensions do not matter, here.
@@ -30,7 +30,7 @@ exiftool.exe -all= ./anotherfile.webp -o copyright.webp
 .\exiftool.exe -artist="User of the Plugin and Site" .\copyright.jpg
 ```
 
-> The other functionality was not changed so the original Readme follows herafter.
+> The other functionality of the Plugin was not changed so the original Readme follows herafter.
 
 ## Description
 
@@ -104,6 +104,9 @@ By default the plugin will process jpg/jpeg and webp files.
 * Log Errors: whether to log error output which can be helpful for debugging purposes.
 
 ## Changelog
+
+### 1.1.0 - 2023-05-01
+* Updates for phpstan check with level 8. Only 8 error messages remain, but these are due to inconstent type definitions in WP funtions. No functional changes. Readme update.
 
 ### 1.0 - 2023-04-27
 

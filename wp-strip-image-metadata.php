@@ -4,7 +4,7 @@
  * Plugin Name: WP Strip Image Metadata (JPG + WEBP)
  * Plugin URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.0
+ * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg, Samiff
