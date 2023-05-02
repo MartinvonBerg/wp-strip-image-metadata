@@ -1,4 +1,4 @@
-# WP Strip Image Metadata for JPG and WEBP Files
+# Strip Image Metadata for JPG and WEBP Files
 
 ## Disclaimer
 This Plugin is based on the work of Samiff and the Plugin "WP Strip Image Metadata". If you are looking for a simple Plugin to strip all Metadata you should install this one. Available from the WordPress.org plugin repository here: 

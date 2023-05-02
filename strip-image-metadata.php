@@ -1,7 +1,7 @@
 <?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 
 /**
- * Plugin Name: WP Strip Image Metadata (JPG + WEBP)
+ * Plugin Name: Strip Image Metadata (JPG+WEBP)
  * Plugin URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
  * Version: 1.2.0
@@ -15,7 +15,7 @@
  * Domain Path: /languages
  */
 
-// TODO: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
+// wait: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
 // note: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
 // Note: checked this readme with https://wpreadme.com/
 
