@@ -105,8 +105,11 @@ By default the plugin will process jpg/jpeg and webp files.
 
 ## Changelog
 
+### 1.2.0 - 2023-05-02
+* Updates for translation including bugfixes and German translation added.
+
 ### 1.1.0 - 2023-05-01
-* Updates for phpstan check with level 8. Only 8 error messages remain, but these are due to inconstent type definitions in WP funtions. No functional changes. Readme update.
+* Updates for phpstan check with level 8. Only 8 error messages remain, but these are due to inconstent type definitions in WP functions. No functional changes. Readme update.
 
 ### 1.0 - 2023-04-27
 

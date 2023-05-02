@@ -4,7 +4,7 @@
  * Plugin Name: WP Strip Image Metadata (JPG + WEBP)
  * Plugin URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg, Samiff
@@ -12,10 +12,11 @@
  * License: GPL-2.0
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: wp-strip-image-metadata
+ * Domain Path: /languages
  */
 
 // TODO: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
-// TODO: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata
+// note: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
 // Note: checked this readme with https://wpreadme.com/
 
 
@@ -27,6 +28,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/inc/extractMetadata.php';
 require_once __DIR__ . '/inc/implode_all.php';
+
+// load textdomain
+add_action( 'init', '\mvbplugins\stripmetadata\wp_strip_meta_load_textdomain');
+
+/**
+ * Load the translation for the locale
+ *
+ * @return bool
+ */
+function wp_strip_meta_load_textdomain() {
+	$dir = dirname(plugin_basename(__FILE__)) . \DIRECTORY_SEPARATOR . 'languages';
+	$result = load_plugin_textdomain( 'wp-strip-image-metadata', false, $dir ); 
+}
 
 
 /**
@@ -82,7 +96,7 @@ class WP_Strip_Image_Metadata {
 	 */
 	public static function menu_init() {
 		add_options_page(
-			__( 'WP Strip Image Metadata', 'wp-strip-image-metadata' ),
+			__( 'Strip Image Metadata', 'wp-strip-image-metadata' ),
 			__( 'Strip Image Metadata', 'wp-strip-image-metadata' ),
 			'manage_options',
 			'wp_strip_image_metadata',
@@ -105,7 +119,7 @@ class WP_Strip_Image_Metadata {
 
 		?>
 		<div id="wp_strip_image_metadata" class="wrap">
-			<h1><?php esc_html_e( 'WP Strip Image Metadata', 'wp-strip-image-metadata' ); ?></h1>
+			<h1><?php esc_html_e( 'Strip Image Metadata', 'wp-strip-image-metadata' ); ?></h1>
 
 			<form action="options.php" method="post">
 				<?php
@@ -132,7 +146,7 @@ class WP_Strip_Image_Metadata {
 			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
 			
 			<h4><?php esc_html_e( '- in copyright.jpg', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_jpg) : \esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
+			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_jpg) : esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
 				foreach ( $exif_to_print as $key) {
 					if (\key_exists($key, $exif_jpg)) {
@@ -144,7 +158,7 @@ class WP_Strip_Image_Metadata {
 			?>
 			
 			<h4><?php esc_html_e( '- in copyright.webp', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_webp) : \esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
+			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_webp) : esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
 				foreach ( $exif_to_print as $key) {
 					if (\key_exists($key, $exif_webp)) {
@@ -349,7 +363,7 @@ class WP_Strip_Image_Metadata {
                 name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
 				id="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>" 
 				value="<?php echo esc_attr( $setting_value ); ?>">
-			<label>Min: 0, Max: 10000. Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images.</label>
+			<label>Min: 0, Max: 10000. <?php esc_html_e('Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images','wp-strip-image-metadata' );?>.</label>
 			<?php
 		}
 	}
@@ -443,12 +457,12 @@ class WP_Strip_Image_Metadata {
 					$filesize = self::filesize_formatted( $path);
 					$size = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exifData ) );
 					$allsizes = $allsizes . $size . ' / ';
-					$paths[ $key ] = 'Meta Size: ' . strval($size) . ' and filesize: '. $filesize  .' of ' . $paths[ $key ];
+					$paths[ $key ] = __('Meta Size','wp-strip-image-metadata') . ' : ' . strval($size) . ' ' . __(' and filesize','wp-strip-image-metadata') . ' : ' . $filesize  . __(' of ','wp-strip-image-metadata') . $paths[ $key ];
 				}
 				sort( $paths );
 
 				//$exifAsStringLength = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exif ) );
-				$exifAsStringLength = rtrim($allsizes,' /') . ' Meta size in bytes.';
+				$exifAsStringLength = rtrim($allsizes,' /') . ' ' . __('Meta Size','wp-strip-image-metadata') . ' in Bytes.';
 				if ( \mvbplugins\stripmetadata\implode_all( ' ', $exif) === " -- -- -- -- ---    0 notitle     ") {$exif = '';};
 				
 				add_action(
@@ -458,7 +472,7 @@ class WP_Strip_Image_Metadata {
 				<div class="notice notice-info is-dismissible">
 					<details style="padding-top:8px;padding-bottom:8px;">
 						<summary>
-							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ' . $exifAsStringLength, 'wp-strip-image-metadata' ); ?>
+							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo $exifAsStringLength ?>
 						</summary>
 						<div>
 							<?php
@@ -491,18 +505,21 @@ class WP_Strip_Image_Metadata {
 				<div class="notice notice-success is-dismissible">
 					<p>
 					<?php
-						echo esc_html(
-							sprintf(
-							/* translators: placeholders are the number of images processed with the bulk action */
-								_n(
-									'WP Strip Image Metadata: %s image including generated thumbnail sizes was processed.',
-									'WP Strip Image Metadata: %s images including generated thumbnail sizes were processed.',
-									$img_count, 
-									'wp_strip_image_metadata'
-								),
+						/* translators: placeholders are the number of images processed with the bulk action */
+						printf(
+							_n(	'WP Strip Image Metadata: %s image including',
+								'WP Strip Image Metadata: %s images including',
 								$img_count, 
-							)
-						) . ' ' . $stripped_count . ' images of ' . $path_count . ' overall were stripped.';
+								'wp-strip-image-metadata'),
+							$img_count, 
+						);
+						echo(' ' . $stripped_count . ' / ' . $path_count . ' '); 
+						echo(
+							_n(	'subsizes was stripped',
+								'subsizes were stripped',
+								$img_count, 
+								'wp-strip-image-metadata')
+						);
 					?>
 					</p>
 				</div>
@@ -898,7 +915,7 @@ class WP_Strip_Image_Metadata {
 			return $bulk_actions;
 		}
 
-		$bulk_actions['wp_strip_image_metadata'] = __( 'WP Strip Image Metadata', 'wp-strip-image-metadata' );
+		$bulk_actions['wp_strip_image_metadata'] = __( 'Strip Image Metadata', 'wp-strip-image-metadata' );
 		return $bulk_actions;
 	}
 
