@@ -1,0 +1,26 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+	<title>icon-svg</title>
+	<defs>
+		<image  width="128" height="128" id="img1" href="data:image/png;base64,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"/>
+		<clipPath clipPathUnits="userSpaceOnUse" id="cp1">
+			<path d="m0 0h128v128h-128z"/>
+		</clipPath>
+	</defs>
+	<style>
+		.s0 { fill: #ffffff } 
+	</style>
+	<use id="Layer 1" style="mix-blend-mode: multiply" href="#img1" x="0" y="0"/>
+	<g id="Clip-Path: Web_1920_1" clip-path="url(#cp1)">
+		<g id="Web_1920_1">
+			<g id="Group_434">
+				<g id="Group_433">
+					<g id="Group_433-2">
+						<path id="Path_5" fill-rule="evenodd" class="s0" d="m93.2 82.9h-78.7v-59.2h78.7zm-73-5.8h67.2v-47.7h-67.2z"/>
+					</g>
+				</g>
+				<path id="Path_5-2" class="s0" d="m103.6 34.1v59.2h-78.7v-8.6h5.8v2.8h67.2v-47.6h-2.5v-5.8z"/>
+				<path id="Path_6" class="s0" d="m114.2 44.8v59.2h-78.7v-8.6h5.7v2.8h67.2v-47.6h-2.5v-5.8z"/>
+			</g>
+		</g>
+	</g>
+</svg>
