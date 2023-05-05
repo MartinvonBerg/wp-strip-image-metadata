@@ -434,6 +434,22 @@ function get_exif_meta( string $buffer )
 			'comps'=> 1, // Number of components per data-field 
 			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
 		), 
+		/*
+		'0x0131' => array(
+			'text' => 'software',
+			'type' => 2, // ascii string
+			'Byte' => 0, // Bytes per component: taken from data field
+			'comps'=> 1, // Number of components per data-field 
+			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
+		),
+		'0x013b' => array(
+			'text' => 'artist',
+			'type' => 2, // ascii string
+			'Byte' => 0, // Bytes per component: taken from data field
+			'comps'=> 1, // Number of components per data-field 
+			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
+		),
+		*/
 		'0x0112' => array(
 			'text' => 'orientation',
 			'type' => 3, // unsigned short
@@ -512,7 +528,30 @@ function get_exif_meta( string $buffer )
 			'Byte' => 2, // Bytes per component
 			'comps'=> 2, // Number of components per data-field 
 			'offs' => 0, // offset for type 2, 5, 10, 12
+		),
+		/*
+		'0xA431' => array(
+			'text' => 'serial',
+			'type' => 2, // ascii string
+			'Byte' => 0, // Bytes per component: taken from data field
+			'comps'=> 1, // Number of components per data-field 
+			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
 		), 
+		'0xA433' => array(
+			'text' => 'lensmake',
+			'type' => 2, // ascii string
+			'Byte' => 0, // Bytes per component: taken from data field
+			'comps'=> 1, // Number of components per data-field 
+			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
+		), 
+		'0xA434' => array(
+			'text' => 'lensmodel',
+			'type' => 2, // ascii string
+			'Byte' => 0, // Bytes per component: taken from data field
+			'comps'=> 1, // Number of components per data-field 
+			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
+		),
+		*/
 	);
 
 	$head = strtoupper( substr( $buffer, 0, 4) );
