@@ -1,5 +1,5 @@
-=== Strip Image Metadata (JPG+WEBP) ===
-Contributors: martinvonberg, samiff
+=== Strip Image Metadata for JPG and WEBP ===
+Contributors: martinvonberg
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
 Tested up to: 6.2

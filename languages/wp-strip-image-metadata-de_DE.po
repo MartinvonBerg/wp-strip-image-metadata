@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Strip Image Metadata (JPG + WEBP) 1.1.0\n"
+"Project-Id-Version: Strip Image Metadata for JPG and WEBP 1.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-strip-image-"
 "metadata\n"
 "POT-Creation-Date: 2023-05-02T16:14:10+02:00\n"
@@ -18,8 +18,8 @@ msgstr ""
 "X-Domain: wp-strip-image-metadata\n"
 
 #. Plugin Name of the plugin
-msgid "WP Strip Image Metadata (JPG + WEBP)"
-msgstr "WP Strip Image Metadata (JPG + WEBP)"
+msgid "Strip Image Metadata for JPG and WEBP"
+msgstr "Strip Image Metadata for JPG and WEBP"
 
 #. Description of the plugin
 msgid ""
