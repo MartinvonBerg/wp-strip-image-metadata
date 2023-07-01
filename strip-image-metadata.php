@@ -40,6 +40,7 @@ add_action( 'init', '\mvbplugins\stripmetadata\wp_strip_meta_load_textdomain');
 function wp_strip_meta_load_textdomain() {
 	$dir = dirname(plugin_basename(__FILE__)) . \DIRECTORY_SEPARATOR . 'languages';
 	$result = load_plugin_textdomain( 'wp-strip-image-metadata', false, $dir ); 
+	return $result;
 }
 
 
@@ -341,7 +342,7 @@ class WP_Strip_Image_Metadata {
 					<label>
 						<input
 							type="radio"
-							<?php echo checked( $setting_value, $item, false ); ?>
+							<?php echo esc_attr( checked( $setting_value, $item, false ) ); ?>
 							value="<?php echo esc_attr( $item ); ?>"
 							name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
 						/>
@@ -472,7 +473,7 @@ class WP_Strip_Image_Metadata {
 				<div class="notice notice-info is-dismissible">
 					<details style="padding-top:8px;padding-bottom:8px;">
 						<summary>
-							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo $exifAsStringLength ?>
+							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo esc_attr($exifAsStringLength) ?>
 						</summary>
 						<div>
 							<?php
@@ -513,12 +514,11 @@ class WP_Strip_Image_Metadata {
 								'wp-strip-image-metadata'),
 							$img_count, 
 						);
-						echo(' ' . $stripped_count . ' / ' . $path_count . ' '); 
-						echo(
-							_n(	'subsizes was stripped',
-								'subsizes were stripped',
-								$img_count, 
-								'wp-strip-image-metadata')
+						echo esc_attr(' ' . $stripped_count . ' / ' . $path_count . ' '); 
+						echo esc_attr(_n('subsizes was stripped',
+										'subsizes were stripped',
+										$img_count, 
+										'wp-strip-image-metadata')
 						);
 					?>
 					</p>

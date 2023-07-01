@@ -1,22 +1,24 @@
 === Strip Image Metadata for JPG and WEBP ===
+Plugin Name: Strip Image Metadata for JPG and WEBP
 Contributors: martinvonberg
+Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CQA6XZ7LUMBJQ
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
 Tested up to: 6.2
-Stable tag: 1.0
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Strip Image Metadata for JPG and WEBP Files
 
-== Disclaimer ==
+== Description ==
 
 This Plugin is based on the work of Samiff and the Plugin "WP Strip Image Metadata". If you are looking for a simple Plugin to strip all Metadata you should install this one. Available from the WordPress.org plugin repository here: https://wordpress.org/plugins/wp-strip-image-metadata/
 
 This Plugin extends the Functionality of "WP Strip Image Metadata" with the following Functions:
 
-== Extended Functionality ==
+= Extended Functionality =
 
 -   Handle WEBP-Images, too.
 -   set / add / change Copyright, Artist or Credit Information in JPG and WEBP images Files.
@@ -24,10 +26,10 @@ This Plugin extends the Functionality of "WP Strip Image Metadata" with the foll
 -   Show some more Information in the Image Edit Panel
 -   Set a Minimum version for Imagick (3.4.4) and Gmagick (2.0.5) to handle files at all. Gmagick is still limited in functionality.
 
-### Preparation of Copyright Template Files
+= Preparation of Copyright Template Files =
 
 Both Imagick and Gmagick do not allow to set EXIF-Metadata directly. The author of this plugin does not know an Open Source PHP or WordPress Function with appropriate License to set metadata in an Image File. So a Template File is used that has to be prepared by the user. It's only possible to use one template File for
-one Artist, only. \> ! The Plugin uses one Template File for the whole site. So, if you are on a Multi-User-Site this Plugin is not for you.
+one Artist, only! The Plugin uses one Template File for the whole site. So, if you are on a Multi-User-Site this Plugin is not for you.
 
 1.  Prepare a JPG and WEBP File with very small size, e.g. 100x100 or so. Image dimensions do not matter, here.
 2.  Strip all Metadata with exiftool (current version 12.6.0.0 writes webp, too):
@@ -46,13 +48,13 @@ exiftool.exe -artist="User of the Plugin and Site" ./copyright.jpg
 
 The other functionality of the Plugin was not changed so the original Readme follows herafter.
 
-== Description
+= Original Description =
 
 Strip image metadata on upload or via bulk action, and view image EXIF data.
 
 WP Strip Image Metadata is a privacy focused WordPress plugin that helps in removing potentially sensitive metadata from your uploaded images.
 
-== What is image metadata?
+= What is image metadata? =
 
 Image metadata is extra information embedded in image files. This information is stored in a variety of formats and contains items like the model of the camera that took a photo.
 
@@ -62,7 +64,16 @@ This plugin provides an easy enabled/disabled setting so you can make the call o
 
 **Note**: this plugin requires the "Imagick" or "Gmagick" PHP extension to function.
 
-== Frequently Asked Questions
+== Installation ==
+
+1. Install the plugin through the WordPress plugins screen.
+2. Activate the plugin on the WordPress plugins screen.
+
+= Configuring =
+EN: You configure the plugin in *Settings > Strip Image Metadata*.
+DE: Die Konfiguration erfolgt in *Settings > Metadaten entfernen*.
+
+== Frequently Asked Questions ==
 
 ### How will I know if I have the required Imagick or Gmagick extension on my site?
 
@@ -124,7 +135,10 @@ By default the plugin will process jpg/jpeg and webp files.
 == Upgrade Notice ==
 First Release. No need to upgrade now.
 
-== Changelog
+== Changelog ==
+
+### 1.2.0 - 2023-07-01
+- Updates for adding Plugin to Wordpress.org official directory. (Escaping for 4 echo added.). Updated this readme.
 
 ### 1.2.0 - 2023-05-02
 - Updates for translation including bugfixes and German translation added.
