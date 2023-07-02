@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
 Tested up to: 6.2
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -15,7 +15,6 @@ Strip Image Metadata for JPG and WEBP Files
 == Description ==
 
 This Plugin is based on the work of Samiff and the Plugin "WP Strip Image Metadata". If you are looking for a simple Plugin to strip all Metadata you should install this one. Available from the WordPress.org plugin repository here: https://wordpress.org/plugins/wp-strip-image-metadata/
-
 This Plugin extends the Functionality of "WP Strip Image Metadata" with the following Functions:
 
 = Extended Functionality =
@@ -51,17 +50,13 @@ The other functionality of the Plugin was not changed so the original Readme fol
 = Original Description =
 
 Strip image metadata on upload or via bulk action, and view image EXIF data.
-
 WP Strip Image Metadata is a privacy focused WordPress plugin that helps in removing potentially sensitive metadata from your uploaded images.
 
 = What is image metadata? =
 
 Image metadata is extra information embedded in image files. This information is stored in a variety of formats and contains items like the model of the camera that took a photo.
-
 However, image metadata may also contain identifying information such as the GPS location coordinates of an image taken with a smartphone for example.
-
 This plugin provides an easy enabled/disabled setting so you can make the call on when image metadata should be removed.
-
 **Note**: this plugin requires the "Imagick" or "Gmagick" PHP extension to function.
 
 == Installation ==
@@ -136,6 +131,9 @@ By default the plugin will process jpg/jpeg and webp files.
 First Release. No need to upgrade now.
 
 == Changelog ==
+
+### 1.3.0 - 2023-07-01
+- Added a Button for stripping the image in media details view.
 
 ### 1.2.0 - 2023-07-01
 - Updates for adding Plugin to Wordpress.org official directory. (Escaping for 4 echo added.). Updated this readme.

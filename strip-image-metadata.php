@@ -4,7 +4,7 @@
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg
@@ -17,14 +17,11 @@
 
 // wait: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
 // note: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
-// Note: checked this readme with https://wpreadme.com/
 
 
 namespace mvbplugins\stripmetadata;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 require_once __DIR__ . '/inc/extractMetadata.php';
 require_once __DIR__ . '/inc/implode_all.php';
@@ -37,17 +34,12 @@ add_action( 'init', '\mvbplugins\stripmetadata\wp_strip_meta_load_textdomain');
  *
  * @return bool
  */
-function wp_strip_meta_load_textdomain() {
+function wp_strip_meta_load_textdomain() :bool {
 	$dir = dirname(plugin_basename(__FILE__)) . \DIRECTORY_SEPARATOR . 'languages';
 	$result = load_plugin_textdomain( 'wp-strip-image-metadata', false, $dir ); 
 	return $result;
 }
 
-
-/**
- * Disable some PHPCS rules file wide.
- * phpcs:disable WordPress.PHP.YodaConditions.NotYoda
- */
 
 /**
  * WP_Strip_Image_Metadata main class.
@@ -60,25 +52,25 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @var array<string>
 	 */
-	public static $image_file_types = array(
+	public static array $image_file_types = [
 		'image/jpg',
 		'image/jpeg',
 		'image/webp'
-	);
+	];
 
 	/**
 	 * empty placeholder for the version
 	 *
 	 * @var string
 	 */
-	public static $versionString = '';
+	public static string $versionString = '';
 
 	/**
 	 * Initialize plugin hooks and resources.
 	 *
 	 * @return void
 	 */
-	public static function init() {
+	public static function init() :void {
 		add_action( 'admin_menu', array( __CLASS__, 'menu_init' ) );
 		add_action( 'admin_init', array( __CLASS__, 'settings_init' ) );
 		add_action( 'wp_rest_mediacat_upload', array( __CLASS__, 'strip_meta_after_rest_mediacat'), 10, 2 );
@@ -95,7 +87,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function menu_init() {
+	public static function menu_init() :void {
 		add_options_page(
 			__( 'Strip Image Metadata', 'wp-strip-image-metadata' ),
 			__( 'Strip Image Metadata', 'wp-strip-image-metadata' ),
@@ -110,7 +102,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function plugin_settings_page() {
+	public static function plugin_settings_page() :void {
 		$image_lib = self::has_supported_image_library();
 		$pathToCopyrightFile_webp = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
 		$pathToCopyrightFile_jpg = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
@@ -179,7 +171,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function settings_init() {
+	public static function settings_init() :void {
 		$args = array(
 			'type'              => 'string',
 			'sanitize_callback' => array( __CLASS__, 'sanitize_settings' ),
@@ -255,7 +247,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array<string, int|string>
 	 */
-	public static function default_plugin_settings() {
+	public static function default_plugin_settings() :array {
 		return array(
 			'strip_active'         => 'disabled',
 			'preserve_icc'         => 'disabled',
@@ -271,7 +263,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function set_default_plugin_settings() {
+	public static function set_default_plugin_settings() :void {
 		update_option(
 			'wp_strip_image_metadata_settings',
 			self::default_plugin_settings(),
@@ -284,7 +276,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array<string, int|string>
 	 */
-	public static function get_plugin_settings() {
+	public static function get_plugin_settings() :array {
 		$settings = get_option( 'wp_strip_image_metadata_settings' );
 
 		if ( empty( $settings ) ) {
@@ -302,7 +294,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array<string, int|string> Sanitized settings saved.
 	 */
-	public static function sanitize_settings( $input ) {
+	public static function sanitize_settings( array $input ) :array {
 		return array(
 			'strip_active'         => $input['strip_active'] === 'disabled' ? 'disabled' : 'enabled',
 			'preserve_icc'         => $input['preserve_icc'] === 'disabled' ? 'disabled' : 'enabled',
@@ -318,18 +310,18 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return string
 	 */
-	public static function settings_section_text() {
+	public static function settings_section_text() :string {
 		return '';
 	}
 
 	/**
 	 * Settings field callback.
 	 *
-	 * @param string $setting The setting to output HTML for.
+	 * @param array $setting The setting to output HTML for.
 	 *
 	 * @return void
 	 */
-	public static function setting_output( $setting ) {
+	public static function setting_output( array $setting ) :void {
 		$settings      = self::get_plugin_settings();
 		$setting_value = $settings[ $setting[0] ];
 
@@ -375,7 +367,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function admin_notices() {
+	public static function admin_notices() :void {
 		$settings = self::get_plugin_settings();
 
 		// If no supported image processing libraries are found, show an admin notice and bail.
@@ -416,7 +408,7 @@ class WP_Strip_Image_Metadata {
 		// When viewing an attachment details page, show image EXIF data in an admin notice.
 		add_action(
 			'load-post.php',
-			function () {
+			function () use ( $settings ) {
 				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$is_image = wp_attachment_is_image( $post );
 				$mime = \get_post_mime_type( $post );
@@ -425,9 +417,15 @@ class WP_Strip_Image_Metadata {
 				$paths = [];
 				$paths = array_merge( $paths, self::get_all_paths_for_image( $post ) );
 
+				// single stripping for image if button was clicked
+				if (isset( $_POST['strip_meta_button']) && $_POST['strip_meta_button'] === 'Strip Metadata' && $settings['strip_active'] !== 'disabled' ) {
+					self::strip_meta_after_rest_mediacat( $post, 'context-rest-upload');
+				}
+
 				// sanitize jpg mime type.
 				if ( $mime === 'image/jpg') { $mime = 'image/jpeg'; }
 
+				// get EXIF-Data from images
 				if ( $is_image && $pathToOriginalImage !== false && $mime === 'image/jpeg' ) {
 
 					try {
@@ -466,14 +464,24 @@ class WP_Strip_Image_Metadata {
 				$exifAsStringLength = rtrim($allsizes,' /') . ' ' . __('Meta Size','wp-strip-image-metadata') . ' in Bytes.';
 				if ( \mvbplugins\stripmetadata\implode_all( ' ', $exif) === " -- -- -- -- ---    0 notitle     ") {$exif = '';};
 				
+				$current_uri = add_query_arg( NULL, NULL );
+				if (isset( $_POST['strip_meta_button']) && $_POST['strip_meta_button'] === 'Strip Metadata' ) {
+					// strip metadata here and print success on success.
+					$exifAsStringLength = $exifAsStringLength . ' Stripped!';
+				}
+
 				add_action(
 					'admin_notices',
-					function () use ( $exif, $exifAsStringLength, $paths ) {
+					function () use ( $exif, $exifAsStringLength, $paths, $current_uri ) {
 						?>
 				<div class="notice notice-info is-dismissible">
 					<details style="padding-top:8px;padding-bottom:8px;">
 						<summary>
 							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo esc_attr($exifAsStringLength) ?>
+							<form action="<?php echo $current_uri ?>" method="POST">
+      							<input type="submit" name="strip_meta_button" id="strip_meta_button" value="Strip Metadata" class="button" style="margin-top: 8px;" /><br/>
+   							</form>
+							   
 						</summary>
 						<div>
 							<?php
@@ -549,7 +557,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return string|false The supported image library to use, or false if no support found.
 	 */
-	public static function has_supported_image_library() {
+	public static function has_supported_image_library() :mixed {
 		// Test for Imagick support.
 		$imagick = false;
 		$webpSupported = false;
@@ -613,7 +621,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return bool the result as boolean. True on success.
 	 */
-	public static function strip_image_metadata( $file ) {
+	public static function strip_image_metadata( string $file ) :bool {
 		$mime = mime_content_type( $file );
 		$result = false;
 
@@ -874,7 +882,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array returning unchanged $metadata
 	 */
-	public static function strip_meta_after_generate_attachment_metadata( $metadata, $attachment_id, $context ){
+	public static function strip_meta_after_generate_attachment_metadata( array $metadata, int $attachment_id, string $context ) :array {
 		// loop through images
 		$paths = self::get_all_paths_for_image( $attachment_id );
 		foreach ( $paths as $file) {
@@ -892,7 +900,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function strip_meta_after_rest_mediacat( $attachment_id, $context ){
+	public static function strip_meta_after_rest_mediacat( int $attachment_id, string $context ) :void {
 		if ( $context !== 'context-rest-upload') {return;}
 
 		// loop through images
@@ -910,7 +918,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array
 	 */
-	public static function register_bulk_strip_action( $bulk_actions ) {
+	public static function register_bulk_strip_action( array $bulk_actions ) :array {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return $bulk_actions;
 		}
@@ -928,7 +936,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return string Redirect URL.
 	 */
-	public static function handle_bulk_strip_action( $redirect_url, $action, $ids ) {
+	public static function handle_bulk_strip_action( string $redirect_url, string $action, array $ids ) :string {
 		if ( $action !== 'wp_strip_image_metadata' ) {
 			return $redirect_url;
 		}
@@ -980,8 +988,8 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return array<string> A unique array of image paths.
 	 */
-	public static function get_all_paths_for_image( $id ) {
-		$paths = array();
+	public static function get_all_paths_for_image( int $id ) :array {
+		$paths = [];
 
 		$attachment_path = wp_get_original_image_path( $id ); // The server path to the attachment.
 		$attachment_meta = wp_get_attachment_metadata( $id ); // Array that contains all the subsize file names.
@@ -1017,7 +1025,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function logger( $msg ) {
+	public static function logger( string $msg ) :void {
 		$settings = self::get_plugin_settings();
 		$logging  = array_key_exists( 'logging', $settings ) ? $settings['logging'] : 'disabled';
 
@@ -1031,7 +1039,7 @@ class WP_Strip_Image_Metadata {
 	 *
 	 * @return void
 	 */
-	public static function plugin_cleanup() {
+	public static function plugin_cleanup() :void {
 		delete_option( 'wp_strip_image_metadata_settings' );
 	}
 
@@ -1042,7 +1050,7 @@ class WP_Strip_Image_Metadata {
 	 * @param  string $path the full file-path
 	 * @return string the nicely formatted filesize
 	 */
-	private static function filesize_formatted($path)
+	private static function filesize_formatted( string $path) :string
 	{
 		$size = filesize($path);
 		$units = array( 'B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
