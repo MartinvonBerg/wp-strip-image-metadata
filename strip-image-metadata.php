@@ -418,8 +418,9 @@ class WP_Strip_Image_Metadata {
 				$paths = array_merge( $paths, self::get_all_paths_for_image( $post ) );
 
 				// single stripping for image if button was clicked
-				if (isset( $_POST['strip_meta_button']) && $_POST['strip_meta_button'] === 'Strip Metadata' && $settings['strip_active'] !== 'disabled' ) {
+				if (isset( $_POST['strip_meta_button']) && $settings['strip_active'] !== 'disabled' ) {
 					self::strip_meta_after_rest_mediacat( $post, 'context-rest-upload');
+					self::logger( 'WP Strip Image Metadata: Stripped with Button');
 				}
 
 				// sanitize jpg mime type.
@@ -465,9 +466,10 @@ class WP_Strip_Image_Metadata {
 				if ( \mvbplugins\stripmetadata\implode_all( ' ', $exif) === " -- -- -- -- ---    0 notitle     ") {$exif = '';};
 				
 				$current_uri = add_query_arg( NULL, NULL );
-				if (isset( $_POST['strip_meta_button']) && $_POST['strip_meta_button'] === 'Strip Metadata' ) {
+				if ( isset( $_POST['strip_meta_button']) ) {
 					// strip metadata here and print success on success.
-					$exifAsStringLength = $exifAsStringLength . ' Stripped!';
+					$exifAsStringLength = $exifAsStringLength . ' ' . __('Stripped','wp-strip-image-metadata') . '!';
+					self::logger('Button: '. $current_uri .' '. $exifAsStringLength);
 				}
 
 				add_action(
@@ -478,8 +480,8 @@ class WP_Strip_Image_Metadata {
 					<details style="padding-top:8px;padding-bottom:8px;">
 						<summary>
 							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo esc_attr($exifAsStringLength) ?>
-							<form action="<?php echo $current_uri ?>" method="POST">
-      							<input type="submit" name="strip_meta_button" id="strip_meta_button" value="Strip Metadata" class="button" style="margin-top: 8px;" /><br/>
+							<form action="<?php echo esc_attr($current_uri) ?>" method="POST">
+      							<input type="submit" name="strip_meta_button" id="strip_meta_button" value="<?php \esc_html_e('Strip Metadata','wp-strip-image-metadata')?>" class="button" style="margin-top: 8px;" /><br/>
    							</form>
 							   
 						</summary>

@@ -1,12 +1,14 @@
-# Copyright (C) 2023 Martin von Berg, Samiff
-# This file is distributed under the GPL-2.0.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 msgid ""
 msgstr ""
 "Project-Id-Version: Strip Image Metadata for JPG and WEBP 1.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-strip-image-"
 "metadata\n"
 "POT-Creation-Date: 2023-05-02T16:14:10+02:00\n"
-"PO-Revision-Date: 2023-05-02 16:20+0200\n"
+"PO-Revision-Date: 2023-07-02 09:38+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -14,156 +16,155 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.2.2\n"
+"X-Generator: Eazy Po 1.0.0.0\n"
 "X-Domain: wp-strip-image-metadata\n"
 
-#. Plugin Name of the plugin
+#.  Plugin Name of the plugin
 msgid "Strip Image Metadata for JPG and WEBP"
 msgstr "Strip Image Metadata for JPG and WEBP"
 
-#. Description of the plugin
-msgid ""
-"Strip image metadata from JPGs and WEBPs on upload or via bulk action, and "
-"view image EXIF data."
-msgstr ""
-"Bild-Metadaten aus JPGs und WEBPs beim Hochladen oder per Massenaktion "
-"entfernen und anzeigen."
+#.  Description of the plugin
+msgid "Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data."
+msgstr "Bild-Metadaten aus JPGs und WEBPs beim Hochladen oder per Massenaktion entfernen und anzeigen."
 
-#: wp-strip-image-metadata.php:99 wp-strip-image-metadata.php:100
-#: wp-strip-image-metadata.php:122 wp-strip-image-metadata.php:918
+#: strip-image-metadata.php:92
+#: strip-image-metadata.php:93
+#: strip-image-metadata.php:115
+#: strip-image-metadata.php:926
 msgid "Strip Image Metadata"
 msgstr "Metadaten entfernen"
 
-#: wp-strip-image-metadata.php:128
+#: strip-image-metadata.php:121
 msgid "Save settings"
 msgstr "Einstellungen speichern"
 
-#: wp-strip-image-metadata.php:132
+#: strip-image-metadata.php:125
 msgid "Plugin Information"
 msgstr "Plugin Informationen"
 
-#. translators: %s is the image processing library name and version active on the site
-#: wp-strip-image-metadata.php:138
-msgid ""
-"Compatible image processing library active: %s. Webp is supported. PHP-"
-"Library is: %s"
-msgstr ""
-"Kompatible Bildverarbeitungsbibliothek aktiv: %s. Webp wird unterstützt. PHP-"
-"Bibliothek ist: %s"
+#.  translators: %s is the image processing library name and version active on the site
+#: strip-image-metadata.php:131
+msgid "Compatible image processing library active: %s. Webp is supported. PHP-Library is: %s"
+msgstr "Kompatible Bildverarbeitungsbibliothek aktiv: %s. Webp wird unterstützt. PHP-Bibliothek ist: %s"
 
-#: wp-strip-image-metadata.php:143 wp-strip-image-metadata.php:387
-msgid ""
-"WP Strip Image Metadata: compatible image processing library not found. This "
-"plugin requires the \"Imagick\" or \"Gmagick\" PHP extension to function - "
-"please ask your webhost or system administrator if either can be enabled."
-msgstr ""
-"WP Strip Image Metadata: kompatible Bildverarbeitungsbibliothek nicht "
-"gefunden. Dieses Plugin benötigt die PHP-Erweiterung \"Imagick\" oder "
-"\"Gmagick\", um zu funktionieren - bitte fragen Sie Ihren Webhost oder "
-"Systemadministrator, ob eines von beiden aktiviert werden kann."
+#: strip-image-metadata.php:136
+#: strip-image-metadata.php:380
+msgid "WP Strip Image Metadata: compatible image processing library not found. This plugin requires the \"Imagick\" or \"Gmagick\" PHP extension to function - please ask your webhost or system administrator if either can be enabled."
+msgstr "WP Strip Image Metadata: kompatible Bildverarbeitungsbibliothek nicht gefunden. Dieses Plugin benötigt die PHP-Erweiterung \"Imagick\" oder \"Gmagick\", um zu funktionieren - bitte fragen Sie Ihren Webhost oder Systemadministrator, ob eines von beiden aktiviert werden kann."
 
-#: wp-strip-image-metadata.php:146
+#: strip-image-metadata.php:139
 msgid "Copyright Information of available Files"
 msgstr "Copyright Information in verfügbaren Dateien"
 
-#: wp-strip-image-metadata.php:148
+#: strip-image-metadata.php:141
 msgid "- in copyright.jpg"
 msgstr "- in copyright.jpg"
 
-#: wp-strip-image-metadata.php:149
+#: strip-image-metadata.php:142
 msgid "File copyright.jpg not found"
 msgstr "Datei copyright.jpg nicht gefunden"
 
-#: wp-strip-image-metadata.php:160
+#: strip-image-metadata.php:153
 msgid "- in copyright.webp"
 msgstr "- in copyright.webp"
 
-#: wp-strip-image-metadata.php:161
+#: strip-image-metadata.php:154
 msgid "File copyright.webp not found"
 msgstr "Datei copyright.webp nicht gefunden"
 
-#: wp-strip-image-metadata.php:190
+#: strip-image-metadata.php:183
 msgid "Plugin Settings"
 msgstr "Plugin Einstellungen"
 
-#: wp-strip-image-metadata.php:197
+#: strip-image-metadata.php:190
 msgid "Image Metadata Stripping"
 msgstr "Bild-Metadaten entfernen"
 
-#: wp-strip-image-metadata.php:206
+#: strip-image-metadata.php:199
 msgid "Preserve ICC Color Profile"
 msgstr "ICC Farbprofil behalten"
 
-#: wp-strip-image-metadata.php:215
+#: strip-image-metadata.php:208
 msgid "Preserve Image Orientation"
 msgstr "Bildausrichtung behalten"
 
-#: wp-strip-image-metadata.php:224
+#: strip-image-metadata.php:217
 msgid "Set Size Limit"
 msgstr "Größenbeschränkung setzen"
 
-#: wp-strip-image-metadata.php:233
+#: strip-image-metadata.php:226
 msgid "Set / Keep Copyright"
 msgstr "Copyright setzen / erhalten"
 
-#: wp-strip-image-metadata.php:242
+#: strip-image-metadata.php:235
 msgid "Log Errors"
 msgstr "Fehlermeldungen speichern"
 
-#: wp-strip-image-metadata.php:350
+#: strip-image-metadata.php:343
 msgid "Enabled"
 msgstr "Aktiviert"
 
-#: wp-strip-image-metadata.php:352
+#: strip-image-metadata.php:345
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: wp-strip-image-metadata.php:366
-msgid ""
-"Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no "
-"image at all. 10000 means stripping all images"
-msgstr ""
-"Maximale Bildbreite für das Entfernen der Metadaten setzen. \"0\" bedeutet : "
-"Nichts wird entfernt. \"10000\" bedeutet: Metadaten in allen Bildern werden "
-"entfernt"
+#: strip-image-metadata.php:359
+msgid "Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images"
+msgstr "Maximale Bildbreite für das Entfernen der Metadaten setzen. \"0\" bedeutet : Nichts wird entfernt. \"10000\" bedeutet: Metadaten in allen Bildern werden entfernt"
 
-#: wp-strip-image-metadata.php:406
+#: strip-image-metadata.php:399
 msgid "WP Strip Image Metadata: stripping is currently disabled."
 msgstr "WP Strip Image Metadata: Das Entfernen ist derzeit deaktiviert."
 
-#: wp-strip-image-metadata.php:460 wp-strip-image-metadata.php:465
+#: strip-image-metadata.php:459
+#: strip-image-metadata.php:464
 msgid "Meta Size"
 msgstr "Metadaten"
 
-#: wp-strip-image-metadata.php:460
+#: strip-image-metadata.php:459
 msgid " and filesize"
 msgstr " und Dateigröße"
 
-#: wp-strip-image-metadata.php:460
+#: strip-image-metadata.php:459
 msgid " of "
 msgstr " für "
 
-#: wp-strip-image-metadata.php:475
+#: strip-image-metadata.php:480
 msgid "WP Strip Image Metadata: expand for image EXIF data. Length : "
 msgstr "WP Strip Image Metadata: Erweitern für EXIF-Daten. Länge : "
 
-#: wp-strip-image-metadata.php:510
+#: strip-image-metadata.php:519
 msgid "WP Strip Image Metadata: %s image including"
 msgid_plural "WP Strip Image Metadata: %s images including"
 msgstr[0] "Metadaten entfernen: %s Bild einschließlich"
 msgstr[1] "Metadaten entfernen: %s Bilder einschließlich"
 
-#: wp-strip-image-metadata.php:518
+#: strip-image-metadata.php:526
 msgid "subsizes was stripped"
 msgid_plural "subsizes were stripped"
 msgstr[0] "skalierter Dateien wurde bearbeitet"
 msgstr[1] "skalierter Dateien wurden bearbeitet"
 
-#: wp-strip-image-metadata.php:539
-msgid ""
-"WP Strip Image Metadata: unable to locate all image paths. This might be due "
-"to a non-standard WordPress uploads directory location."
+#: strip-image-metadata.php:547
+msgid "WP Strip Image Metadata: unable to locate all image paths. This might be due to a non-standard WordPress uploads directory location."
+msgstr "WP Strip Image Metadata: Es können nicht alle Bildpfade gefunden werden. Dies könnte auf einen nicht standardmäßigen WordPress-Uploads-Verzeichnisstandort zurückzuführen sein."
+
+#.  Plugin URI of the plugin
+msgid "https://github.com/MartinvonBerg/wp-strip-image-metadata"
 msgstr ""
-"WP Strip Image Metadata: Es können nicht alle Bildpfade gefunden werden. "
-"Dies könnte auf einen nicht standardmäßigen WordPress-Uploads-"
-"Verzeichnisstandort zurückzuführen sein."
+
+#.  Author of the plugin
+msgid "Martin von Berg"
+msgstr ""
+
+#.  Author URI of the plugin
+msgid "https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/"
+msgstr ""
+
+#: strip-image-metadata.php:470
+msgid "Stripped"
+msgstr "Entfernt"
+
+#: strip-image-metadata.php:482
+msgid "Strip Metadata"
+msgstr "Entferne Metadaten"
