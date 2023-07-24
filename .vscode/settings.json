@@ -3,5 +3,11 @@
     "python.linting.enabled": true,
     "python.pythonPath": "C:\\Users\\Martin von Berg\\AppData\\Local\\Programs\\Python\\Python38-32\\python.exe",
     "print.colourScheme": "Atelier Dune",
-    "phpcs.autoConfigSearch": false,
+    "phpcs.autoConfigSearch": true,
+    "phpcs.enable": true,
+    "phpcs.standard": "WordPress",
+    "phpcs.executablePath": "phpcs",
+    "phpcs.showWarnings": true,
+    "phpcs.showErrors": true,
+    "phpcs.showLineNumbers": true
 }

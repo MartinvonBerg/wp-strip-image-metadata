@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore WordPress.Files.FileName.
 namespace mvbplugins\stripmetadata;
 
 /**
@@ -11,17 +11,17 @@ namespace mvbplugins\stripmetadata;
  */
 function implode_all( $glue, $arr ) {
 	if( is_array( $arr ) ){
+
+		foreach( $arr as $key => &$value ){
   
-	  foreach( $arr as $key => &$value ){
-  
-		if( @is_array( $value ) ){
-		  $arr[ $key ] = implode_all( $glue, $value );
+			if( @is_array( $value ) ){
+				$arr[ $key ] = implode_all( $glue, $value );
+			}
 		}
-	  }
   
-	  return implode( $glue, $arr );
+		return implode( $glue, $arr );
 	}
-  
+
 	// Not array
 	return $arr;
 }

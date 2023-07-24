@@ -1,4 +1,4 @@
-<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
+<?php // phpcs:ignore WordPress.Files.FileName
 
 /**
  * Plugin Name: Strip Image Metadata for JPG and WEBP
@@ -15,8 +15,7 @@
  * Domain Path: /languages
  */
 
-// wait: use this https://github.com/giuscris/imageinfo for extracting exif meta data? Branch before! Wait for response.
-// note: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
+// TBD: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
 
 
 namespace mvbplugins\stripmetadata;
@@ -137,29 +136,25 @@ class WP_Strip_Image_Metadata {
 			}
 			?>
 			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
-			
+
 			<h4><?php esc_html_e( '- in copyright.jpg', 'wp-strip-image-metadata' ); ?></h4>
 			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_jpg) : esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
-				foreach ( $exif_to_print as $key) {
-					if (\key_exists($key, $exif_jpg)) {
-						?><p><?php
-						esc_html_e( $key . ' : ' . $exif_jpg[$key] ); 
-						?></p><?php
-					}
-				};
+			foreach ( $exif_to_print as $key) {
+				if (\key_exists($key, $exif_jpg)) {
+					?><p><?php esc_html_e( $key . ' : ' . $exif_jpg[$key] ); ?></p><?php
+				}
+			};
 			?>
-			
+
 			<h4><?php esc_html_e( '- in copyright.webp', 'wp-strip-image-metadata' ); ?></h4>
 			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_webp) : esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
-				foreach ( $exif_to_print as $key) {
-					if (\key_exists($key, $exif_webp)) {
-						?><p><?php
-						esc_html_e( $key . ' : ' . $exif_webp[$key] ); 
-						?></p><?php
-					}
-				};
+			foreach ( $exif_to_print as $key) {
+				if (\key_exists($key, $exif_webp)) {
+					?><p><?php esc_html_e( $key . ' : ' . $exif_webp[$key] ); ?></p><?php
+				}
+			};
 			?>
 
 		</div>
@@ -353,7 +348,7 @@ class WP_Strip_Image_Metadata {
 			// output the number input for sizelimit.
 			?>
 			<input type="number" min="0" max="10000" step="1" 
-                name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
+				name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
 				id="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>" 
 				value="<?php echo esc_attr( $setting_value ); ?>">
 			<label>Min: 0, Max: 10000. <?php esc_html_e('Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images','wp-strip-image-metadata' );?>.</label>
@@ -481,18 +476,17 @@ class WP_Strip_Image_Metadata {
 						<summary>
 							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo esc_attr($exifAsStringLength) ?>
 							<form action="<?php echo esc_attr($current_uri) ?>" method="POST">
-      							<input type="submit" name="strip_meta_button" id="strip_meta_button" value="<?php \esc_html_e('Strip Metadata','wp-strip-image-metadata')?>" class="button" style="margin-top: 8px;" /><br/>
-   							</form>
-							   
+								<input type="submit" name="strip_meta_button" id="strip_meta_button" value="<?php \esc_html_e('Strip Metadata','wp-strip-image-metadata')?>" class="button" style="margin-top: 8px;" /><br/>
+							</form>
 						</summary>
 						<div>
 							<?php
 								/** @phpstan-ignore-next-line */
-								echo '<p>'; esc_html( print_r( $exif ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-								foreach ( $paths as $path) {
-									/** @phpstan-ignore-next-line */
-									echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-								}
+							echo '<p>'; esc_html( print_r( $exif ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+							foreach ( $paths as $path) {
+								/** @phpstan-ignore-next-line */
+								echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+							}
 							?>
 						</div>
 					</details>
@@ -518,14 +512,14 @@ class WP_Strip_Image_Metadata {
 					<?php
 						/* translators: placeholders are the number of images processed with the bulk action */
 						printf(
-							_n(	'WP Strip Image Metadata: %s image including',
+							_n( 'WP Strip Image Metadata: %s image including',
 								'WP Strip Image Metadata: %s images including',
 								$img_count, 
 								'wp-strip-image-metadata'),
 							$img_count, 
 						);
-						echo esc_attr(' ' . $stripped_count . ' / ' . $path_count . ' '); 
-						echo esc_attr(_n('subsizes was stripped',
+						echo esc_attr( ' ' . $stripped_count . ' / ' . $path_count . ' '); 
+						echo esc_attr( _n('subsizes was stripped',
 										'subsizes were stripped',
 										$img_count, 
 										'wp-strip-image-metadata')
@@ -643,7 +637,7 @@ class WP_Strip_Image_Metadata {
 		$settings             = self::get_plugin_settings();
 		$preserve_icc         = array_key_exists( 'preserve_icc', $settings ) ? $settings['preserve_icc'] : 'enabled';
 		$preserve_orientation = array_key_exists( 'preserve_orientation', $settings ) ? $settings['preserve_orientation'] : 'enabled';
-		$keepCopyright		  = array_key_exists( 'set_copyright', $settings ) ? $settings['set_copyright'] : 'enabled';
+		$keepCopyright        = array_key_exists( 'set_copyright', $settings ) ? $settings['set_copyright'] : 'enabled';
 		$sizeLimit            = array_key_exists( 'sizelimit', $settings ) ? \intval( $settings['sizelimit']) : 0;
 
 		// Using the Imagick or Gmagick library for jpegs and webps.

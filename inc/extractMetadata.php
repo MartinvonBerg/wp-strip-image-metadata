@@ -1,8 +1,20 @@
-<?php
-namespace mvbplugins\stripmetadata;
+<?php // phpcs:ignore WordPress.Files.FileName
 
-// Extract Metadata from both Webp and JPG-files. Note: The result array of the both main functions is structurally not identical.
-// Although identended this requirement was not reached. TODO for a future update. The requirement was: "The exif data a array similar to the JSON that is provided via the REST-API".
+/**
+ * Extract Metadata from both Webp and JPG-files
+ *
+ * Description: Extract Metadata from both Webp and JPG-files. Note: The result array of the both main functions is structurally not identical. Although identended this requirement was not reached. TODO for a future update. The requirement was: "The exif data a array similar to the JSON that is provided via the REST-API".
+ *
+ * Requires PHP: 7.4
+ * Author: Martin von Berg
+ * Author URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
+ * License: GPL-2.0
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
+ *
+ * @package MediaLibrary
+ */
+
+namespace mvbplugins\stripmetadata;
 
 const BROKEN_FILE = false; // value to store in img_metadata if error during extracting metadata.
 const MINIMUM_CHUNK_HEADER_LENGTH = 18;
@@ -20,8 +32,8 @@ const EXIF_OFFSET = 8;
  * @param string $filename The complete path to the file in the directory.
  * @return array The exif data a array similar to the JSON that is provided via the REST-API.
  */
-function getJpgMetadata( string $filename ) : array 
-{	
+function getJpgMetadata( string $filename ) :array 
+{
 	$info = [];
 	getimagesize( $filename, $info );
 	$Exif = exif_read_data( $filename, 'ANY_TAG', true );
@@ -49,7 +61,7 @@ function getJpgMetadata( string $filename ) : array
 	$iso = $Exif["EXIF"]["ISOSpeedRatings"] ?? '--';
 	
 	if (isset($Exif["EXIF"]["FocalLengthIn35mmFilm"])) {
-	//if (array_key_exists('FocalLengthIn35mmFilm', $Exif["EXIF"])) {
+		//if (array_key_exists('FocalLengthIn35mmFilm', $Exif["EXIF"])) {
 		$focal = $Exif["EXIF"]["FocalLengthIn35mmFilm"];
 	} else {
 		$focal = '--';
@@ -58,7 +70,7 @@ function getJpgMetadata( string $filename ) : array
 	// Check setting of exif-field make (the lens information, written by my Ligtroom-Plugin)
 	// alternatively I wrote lens information to the make therefore I check for make here
 	if (isset($Exif["IFD0"]["Make"])) {
-	//if (array_key_exists('Make', $Exif['IFD0'])) {
+		//if (array_key_exists('Make', $Exif['IFD0'])) {
 		$make = $Exif["IFD0"]["Make"] ?? '';
 		$make = preg_replace('/\s+/', ' ', $make);
 	} else {
@@ -71,7 +83,7 @@ function getJpgMetadata( string $filename ) : array
 	
 	// get the camera model
 	if (isset($Exif["IFD0"]["Model"])) {
-	//if (array_key_exists('Model', $Exif['IFD0'])) {
+		//if (array_key_exists('Model', $Exif['IFD0'])) {
 		$model = $Exif["IFD0"]["Model"];
 	} else {
 		$model = '';
@@ -121,9 +133,9 @@ function getJpgMetadata( string $filename ) : array
  * Only tested for Nikon D7500 images after handling with Lightroom 6.14 and converson with imagemagick. Not done for all cameras that are around.
  * Title, caption and keywords are not found in EXIF-data. These are taken from XMP-data. 
  * This keys are set in the returned array: 
- * 		credit, copyright, title, caption, camera, keywords, GPS, make, 
- * 		orientation, lens, iso, exposure-time, aperture, focal-length, created-timestamp.
- * 		alt and description are not set.
+ * credit, copyright, title, caption, camera, keywords, GPS, make, 
+ * orientation, lens, iso, exposure-time, aperture, focal-length, created-timestamp.
+ * alt and description are not set.
  *
  * @param string $filename The complete path to the file in the directory.
  * @return array The exif data array similar to the JSON that is provided via the REST-API.
@@ -152,17 +164,18 @@ function extractMetadata( string $filename )
 	$info = findChunksFromFile( $filename, 100 ); //RiffExtractor 
 	if ( $info === false ) {
 		return false;
-    }
+	}
 
-   if ( 'WEBP' != $info['fourCC'] ) {
-	   return false;
-   }
+	if ( 'WEBP' != $info['fourCC'] ) {
+		return false;
+	}
+	
+	$metadata = extractMetadataFromChunks( $info['chunks'], $filename );
+	if ( ! $metadata ) {
+		return false;
+	}
 
-   $metadata = extractMetadataFromChunks( $info['chunks'], $filename );
-   if ( ! $metadata ) {
-	   return false;
-   }
-   return $metadata;
+	return $metadata;
 }
 
 /**
@@ -351,61 +364,61 @@ function findChunksFromFile( string $filename, int $maxChunks = -1 )
  */
 function findChunks( $file, int $maxChunks = -1 ) 
 {
-		$riff = fread( $file, 4 );
-		if ( $riff !== 'RIFF' ) {
-			return false;
+	$riff = fread( $file, 4 );
+	if ( $riff !== 'RIFF' ) {
+		return false;
+	}
+
+	// Next four bytes are fileSize
+	$fileSize = fread( $file, 4 );
+	if ( !$fileSize || strlen( $fileSize ) != 4 ) {
+		return false;
+	}
+
+	// Next four bytes are the FourCC
+	$fourCC = fread( $file, 4 );
+	if ( !$fourCC || strlen( $fourCC ) != 4 ) {
+		return false;
+	}
+
+	// Create basic info structure
+	$info = [
+		'fileSize' => unpack( 'V', $fileSize )[1],
+		'fourCC' => $fourCC,
+		'chunks' => [],
+	];
+	$numberOfChunks = 0;
+
+	// Find out the chunks
+	while ( !feof( $file ) && !( $numberOfChunks >= $maxChunks && $maxChunks >= 0 ) ) {
+		$chunkStart = ftell( $file );
+
+		$chunkFourCC = fread( $file, 4 );
+		if ( !$chunkFourCC || strlen( $chunkFourCC ) != 4 ) {
+			return $info;
 		}
- 
-		// Next four bytes are fileSize
-		$fileSize = fread( $file, 4 );
-		if ( !$fileSize || strlen( $fileSize ) != 4 ) {
-			return false;
+
+		$chunkSize = fread( $file, 4 );
+		if ( !$chunkSize || strlen( $chunkSize ) != 4 ) {
+			return $info;
 		}
- 
-		// Next four bytes are the FourCC
-		$fourCC = fread( $file, 4 );
-		if ( !$fourCC || strlen( $fourCC ) != 4 ) {
-			return false;
-		}
- 
-		// Create basic info structure
-		$info = [
-			'fileSize' => unpack( 'V', $fileSize )[1],
-			'fourCC' => $fourCC,
-			'chunks' => [],
+		$intChunkSize = unpack( 'V', $chunkSize )[1];
+
+		// Add chunk info to the info structure
+		$info['chunks'][] = [
+			'fourCC' => $chunkFourCC,
+			'start' => $chunkStart,
+			'size' => $intChunkSize
 		];
-		$numberOfChunks = 0;
- 
-		// Find out the chunks
-		while ( !feof( $file ) && !( $numberOfChunks >= $maxChunks && $maxChunks >= 0 ) ) {
-			$chunkStart = ftell( $file );
- 
-			$chunkFourCC = fread( $file, 4 );
-			if ( !$chunkFourCC || strlen( $chunkFourCC ) != 4 ) {
-				return $info;
-			}
- 
-			$chunkSize = fread( $file, 4 );
-			if ( !$chunkSize || strlen( $chunkSize ) != 4 ) {
-				return $info;
-			}
-			$intChunkSize = unpack( 'V', $chunkSize )[1];
- 
-			// Add chunk info to the info structure
-			$info['chunks'][] = [
-				'fourCC' => $chunkFourCC,
-				'start' => $chunkStart,
-				'size' => $intChunkSize
-			];
- 
-			// Uneven chunks have padding bytes
-			$padding = $intChunkSize % 2;
-			// Seek to the next chunk
-			fseek( $file, $intChunkSize + $padding, SEEK_CUR );
- 
-		}
- 
-		return $info;
+
+		// Uneven chunks have padding bytes
+		$padding = $intChunkSize % 2;
+		// Seek to the next chunk
+		fseek( $file, $intChunkSize + $padding, SEEK_CUR );
+
+	}
+
+	return $info;
 }
 
 /**
@@ -584,14 +597,14 @@ function get_exif_meta( string $buffer )
 		if ( array_key_exists( $piece, $tags ) ) {
 			// found one tag
 			$value_of_tag = get_meta_from_piece( $isIntel, $buffer, $bufoffs, $piece, $tags );
-			$meta_key =	$tags[ $piece ]['text'];
+			$meta_key = $tags[ $piece ]['text'];
 
 			if ( 'created_timestamp' == $meta_key) {
 				$meta[ 'DateTimeOriginal' ] = $value_of_tag;
 				$value_of_tag = strtotime ( $value_of_tag);
 			}
 			
-			if ( $value_of_tag )	
+			if ( $value_of_tag )
 				$meta[ $meta_key ] = $value_of_tag;
 		}
 		$bufoffs += 1;
@@ -762,7 +775,7 @@ function get_gps_data( string $gpsbuffer, string $buffer, bool $isIntel )
 				
 				// store the new data in array
 				$value_of_tag = $data; 
-				$meta_key =	$tags[ $piece ]['text'];
+				$meta_key = $tags[ $piece ]['text'];
 				$meta[ $meta_key ] = $value_of_tag;
 			}
 		}
@@ -789,7 +802,7 @@ function frombuffer(string $buffer, int $offset, int $length, bool $isIntel) :st
 
 	$binary = substr( $buffer, $offset, $length);
 
-	if ( $isIntel) {	
+	if ( $isIntel ) {
 		$piece = binrevert( $binary );
 	} else {
 		$piece = '0x' . strtoupper( bin2hex ( $binary ) );
