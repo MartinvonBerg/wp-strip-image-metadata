@@ -138,21 +138,21 @@ class WP_Strip_Image_Metadata {
 			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
 
 			<h4><?php esc_html_e( '- in copyright.jpg', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_jpg) : esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
+			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_attr_e( sprintf( 'Path: %s', $pathToCopyrightFile_jpg), 'wp-strip-image-metadata') : esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
 			foreach ( $exif_to_print as $key) {
 				if (\key_exists($key, $exif_jpg)) {
-					?><p><?php esc_html_e( $key . ' : ' . $exif_jpg[$key] ); ?></p><?php
+					?><p><?php echo esc_attr( sprintf( '%s : %s', $key, $exif_jpg[$key] )); ?></p><?php
 				}
 			};
 			?>
 
 			<h4><?php esc_html_e( '- in copyright.webp', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_html_e( 'Path: '. $pathToCopyrightFile_webp) : esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
+			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_attr_e( sprintf( 'Path: %s', $pathToCopyrightFile_webp), 'wp-strip-image-metadata') : esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
 			<?php
 			foreach ( $exif_to_print as $key) {
 				if (\key_exists($key, $exif_webp)) {
-					?><p><?php esc_html_e( $key . ' : ' . $exif_webp[$key] ); ?></p><?php
+					?><p><?php echo esc_attr( sprintf( '%s : %s', $key, $exif_webp[$key] )); ?></p><?php
 				}
 			};
 			?>
@@ -1046,12 +1046,14 @@ class WP_Strip_Image_Metadata {
 	 * @param  string $path the full file-path
 	 * @return string the nicely formatted filesize
 	 */
-	private static function filesize_formatted( string $path) :string
+	private static function filesize_formatted( string $path ) :string
 	{
 		$size = filesize($path);
-		$units = array( 'B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-		$power = $size > 0 ? floor(log($size, 1024)) : 0;
-		return number_format($size / pow(1024, $power), 2, '.', ',') . ' ' . $units[$power];
+		$units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+		$power = $size > 0 ? floor( log($size, 1024) ) : 0;
+		$formattedSize = number_format( $size / pow(1024, $power), 2, '.', ',' );
+		$formattedUnit = $units[$power];
+		return "{$formattedSize} {$formattedUnit}";
 	}
 }
 
