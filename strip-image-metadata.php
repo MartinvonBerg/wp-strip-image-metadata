@@ -1,5 +1,4 @@
-<?php // phpcs:ignore WordPress.Files.FileName
-
+<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
@@ -43,7 +42,7 @@ function wp_strip_meta_load_textdomain() :bool {
 /**
  * WP_Strip_Image_Metadata main class.
  */
-class WP_Strip_Image_Metadata {
+final class WP_Strip_Image_Metadata {
 
 	/**
 	 * Image file types to strip metadata from.
@@ -135,24 +134,44 @@ class WP_Strip_Image_Metadata {
 				esc_html_e( 'WP Strip Image Metadata: compatible image processing library not found. This plugin requires the "Imagick" or "Gmagick" PHP extension to function - please ask your webhost or system administrator if either can be enabled.', 'wp-strip-image-metadata' );
 			}
 			?>
-			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
 
+			<h2><?php esc_html_e( 'Copyright Information of available Files', 'wp-strip-image-metadata' ); ?></h2>
 			<h4><?php esc_html_e( '- in copyright.jpg', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_jpg) ? \esc_attr_e( sprintf( 'Path: %s', $pathToCopyrightFile_jpg), 'wp-strip-image-metadata') : esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' ); ?></p>
+
+			<p>
+			<?php
+			if ( \is_file( $pathToCopyrightFile_jpg) ) {
+				echo \esc_attr( 'Path: ' . $pathToCopyrightFile_jpg);
+			} else {
+				esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' );
+			}
+			?>
+			</p>
+
 			<?php
 			foreach ( $exif_to_print as $key) {
 				if (\key_exists($key, $exif_jpg)) {
-					?><p><?php echo esc_attr( sprintf( '%s : %s', $key, $exif_jpg[$key] )); ?></p><?php
+					?><p><?php echo esc_attr( $key . ' : ' . $exif_jpg[$key] ); ?></p><?php
 				}
 			};
 			?>
 
 			<h4><?php esc_html_e( '- in copyright.webp', 'wp-strip-image-metadata' ); ?></h4>
-			<p><?php \is_file( $pathToCopyrightFile_webp) ? \esc_attr_e( sprintf( 'Path: %s', $pathToCopyrightFile_webp), 'wp-strip-image-metadata') : esc_html_e( 'File copyright.webp not found', 'wp-strip-image-metadata' ); ?></p>
+
+			<p>
+			<?php
+			if ( \is_file( $pathToCopyrightFile_webp ) ) {
+				echo \esc_attr( 'Path: ' . $pathToCopyrightFile_webp );
+			} else {
+				esc_html_e( 'File copyright.jpg not found', 'wp-strip-image-metadata' );
+			}
+			?>
+			</p>
+
 			<?php
 			foreach ( $exif_to_print as $key) {
 				if (\key_exists($key, $exif_webp)) {
-					?><p><?php echo esc_attr( sprintf( '%s : %s', $key, $exif_webp[$key] )); ?></p><?php
+					?><p><?php echo esc_attr( $key . ' : ' . $exif_webp[$key] ); ?></p><?php
 				}
 			};
 			?>
@@ -404,7 +423,7 @@ class WP_Strip_Image_Metadata {
 		add_action(
 			'load-post.php',
 			function () use ( $settings ) {
-				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0; 
 				$is_image = wp_attachment_is_image( $post );
 				$mime = \get_post_mime_type( $post );
 				$pathToOriginalImage = wp_get_original_image_path( $post );
@@ -482,10 +501,10 @@ class WP_Strip_Image_Metadata {
 						<div>
 							<?php
 								/** @phpstan-ignore-next-line */
-							echo '<p>'; esc_html( print_r( $exif ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+							echo '<p>'; esc_html( print_r( $exif ) ); echo '</p>'; 
 							foreach ( $paths as $path) {
 								/** @phpstan-ignore-next-line */
-								echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+								echo '<p>'; esc_html( print_r( $path ) ); echo '</p>'; 
 							}
 							?>
 						</div>
@@ -498,9 +517,9 @@ class WP_Strip_Image_Metadata {
 		);
 
 		// When using the custom bulk strip image metadata action, show how many images were modified.
-		$img_count = isset( $_GET['bulk_wp_strip_img_meta'] ) ? intval( $_GET['bulk_wp_strip_img_meta'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$path_count = isset( $_GET['bulk_wp_strip_overall'] ) ? intval( $_GET['bulk_wp_strip_overall'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$stripped_count = isset( $_GET['bulk_wp_strip_number_stripped'] ) ? intval( $_GET['bulk_wp_strip_number_stripped'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$img_count = isset( $_GET['bulk_wp_strip_img_meta'] ) ? intval( $_GET['bulk_wp_strip_img_meta'] ) : null; 
+		$path_count = isset( $_GET['bulk_wp_strip_overall'] ) ? intval( $_GET['bulk_wp_strip_overall'] ) : null; 
+		$stripped_count = isset( $_GET['bulk_wp_strip_number_stripped'] ) ? intval( $_GET['bulk_wp_strip_number_stripped'] ) : null; 
 
 		if ( $img_count ) {
 			add_action(
@@ -533,7 +552,7 @@ class WP_Strip_Image_Metadata {
 		}
 
 		// When the bulk strip action can't find one of the image file paths, show an error notice.
-		$bulk_error = isset( $_GET['bulk_wp_strip_img_meta_err'] ) ? intval( $_GET['bulk_wp_strip_img_meta_err'] ) : null; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$bulk_error = isset( $_GET['bulk_wp_strip_img_meta_err'] ) ? intval( $_GET['bulk_wp_strip_img_meta_err'] ) : null;
 		if ( $bulk_error === 1 ) {
 			add_action(
 				'admin_notices',
@@ -677,7 +696,7 @@ class WP_Strip_Image_Metadata {
 				if ( $preserve_icc === 'enabled' ) {
 					try {
 						$icc_profile = $imageFile->getimageprofile( 'icc' );
-					} catch ( \Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch ( \Exception $e ) { 
 						// May not be set, ignore.
 					}
 				}
@@ -781,7 +800,7 @@ class WP_Strip_Image_Metadata {
 				if ($preserve_icc === 'enabled') {
 					try {
 						$icc_profile = $imageFile->getImageProfile('icc');
-					} catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch (\Exception $e) {
 						// May not be set, ignore.
 					}
 				}
@@ -790,7 +809,7 @@ class WP_Strip_Image_Metadata {
 				if ($preserve_orientation === 'enabled') {
 					try {
 						$orientation = $imageFile->getImageOrientation();
-					} catch (\Exception $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					} catch (\Exception $e) {
 						// May not be set, ignore.
 					}
 				}
@@ -1026,7 +1045,7 @@ class WP_Strip_Image_Metadata {
 		$logging  = array_key_exists( 'logging', $settings ) ? $settings['logging'] : 'disabled';
 
 		if ( $logging === 'enabled' ) {
-			error_log( $msg ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( $msg );
 		}
 	}
 
