@@ -1,9 +1,9 @@
-<?php // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
+<?php
 /**
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.3.0
+ * Version: 1.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg
@@ -22,7 +22,7 @@ namespace mvbplugins\stripmetadata;
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 require_once __DIR__ . '/inc/extractMetadata.php';
-require_once __DIR__ . '/inc/implode_all.php';
+require_once __DIR__ . '/inc/implode-all.php';
 
 // load textdomain
 add_action( 'init', '\mvbplugins\stripmetadata\wp_strip_meta_load_textdomain');

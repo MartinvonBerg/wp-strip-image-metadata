@@ -1,4 +1,4 @@
-<?php // phpcs:ignore WordPress.Files.FileName
+<?php
 
 /**
  * Extract Metadata from both Webp and JPG-files

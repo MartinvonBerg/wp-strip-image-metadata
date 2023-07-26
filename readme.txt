@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
 Tested up to: 6.2
-Stable tag: 1.3.0
+Stable tag: 1.2.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -134,7 +134,10 @@ First Release. No need to upgrade now.
 
 == Changelog ==
 
-### 1.3.0 - 2023-07-01
+### 1.2.0 - 2023-07-26
+- Formatting change for WPCS rules. Code change w/o functional change to follow plugin Plugin Rules. Mind: Semantic versioning will be changed correctly AFTER upload to the WP plugin directory.
+
+### 1.2.0 - 2023-07-01
 - Added a Button for stripping the image in media details view.
 
 ### 1.2.0 - 2023-07-01
