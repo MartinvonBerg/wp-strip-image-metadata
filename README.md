@@ -108,6 +108,15 @@ By default the plugin will process jpg/jpeg and webp files.
 
 ## Changelog
 
+### 1.2.0 - 2023-07-26
+- Formatting change for WPCS rules. Code change w/o functional change to follow plugin Plugin Rules. Mind: Semantic versioning will be changed correctly AFTER upload to the WP plugin directory.
+
+### 1.2.0 - 2023-07-01
+- Added a Button for stripping the image in media details view.
+
+### 1.2.0 - 2023-07-01
+- Updates for adding Plugin to Wordpress.org official directory. (Escaping for 4 echo added.). Updated this readme.
+
 ### 1.2.0 - 2023-05-02
 * Updates for translation including bugfixes and German translation added.
 
