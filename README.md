@@ -108,6 +108,12 @@ By default the plugin will process jpg/jpeg and webp files.
 
 ## Changelog
 
+### 1.2.0 - 2023-08-09
+- Tested with WordPress 6.3. First upload to Plugin-Direcotory.
+
+### 1.2.0 - 2023-07-26
+- Added checking of WP Nonces for security.
+
 ### 1.2.0 - 2023-07-26
 - Formatting change for WPCS rules. Code change w/o functional change to follow plugin Plugin Rules. Mind: Semantic versioning will be changed correctly AFTER upload to the WP plugin directory.
 

@@ -12,6 +12,8 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain: wp-strip-image-metadata
  * Domain Path: /languages
+ *
+ * @package WP_Strip_Image_Metadata
  */
 
 // TBD: Is it useful? clean WP database as well! except title! Mind Description : contains SRCSET. alt-text, caption, Description. And other metadata of image. No Problem to keep this in database.
@@ -423,7 +425,7 @@ final class WP_Strip_Image_Metadata {
 		add_action(
 			'load-post.php',
 			function () use ( $settings ) {
-				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0; 
+				$post     = isset( $_GET['post'] ) ? intval( $_GET['post'] ) : 0;
 				$is_image = wp_attachment_is_image( $post );
 				$mime = \get_post_mime_type( $post );
 				$pathToOriginalImage = wp_get_original_image_path( $post );
@@ -432,7 +434,14 @@ final class WP_Strip_Image_Metadata {
 				$paths = array_merge( $paths, self::get_all_paths_for_image( $post ) );
 
 				// single stripping for image if button was clicked
-				if (isset( $_POST['strip_meta_button']) && $settings['strip_active'] !== 'disabled' ) {
+				// check the nonce before. Just not in if() for readability.
+				if ( isset( $_GET['wp_nonce'] ) ) {
+					$checkNonce = \wp_verify_nonce( $_GET['wp_nonce'], 'strip_meta_button' . $_GET['action'] . $_GET['post']) === 1;
+				} else {
+					$checkNonce = false;
+				}
+
+				if (isset( $_POST['strip_meta_button']) && $settings['strip_active'] !== 'disabled' && $checkNonce ) {
 					self::strip_meta_after_rest_mediacat( $post, 'context-rest-upload');
 					self::logger( 'WP Strip Image Metadata: Stripped with Button');
 				}
@@ -484,6 +493,9 @@ final class WP_Strip_Image_Metadata {
 					// strip metadata here and print success on success.
 					$exifAsStringLength = $exifAsStringLength . ' ' . __('Stripped','wp-strip-image-metadata') . '!';
 					self::logger('Button: '. $current_uri .' '. $exifAsStringLength);
+				} else {
+					$nonce = \wp_create_nonce( 'strip_meta_button' . 'edit' . strval($post));
+					$current_uri = add_query_arg( 'wp_nonce', $nonce);
 				}
 
 				add_action(
@@ -494,7 +506,7 @@ final class WP_Strip_Image_Metadata {
 					<details style="padding-top:8px;padding-bottom:8px;">
 						<summary>
 							<?php esc_html_e( 'WP Strip Image Metadata: expand for image EXIF data. Length : ', 'wp-strip-image-metadata' ); echo esc_attr($exifAsStringLength) ?>
-							<form action="<?php echo esc_attr($current_uri) ?>" method="POST">
+							<form action="<?php echo esc_attr( $current_uri ) ?>" method="POST">
 								<input type="submit" name="strip_meta_button" id="strip_meta_button" value="<?php \esc_html_e('Strip Metadata','wp-strip-image-metadata')?>" class="button" style="margin-top: 8px;" /><br/>
 							</form>
 						</summary>
@@ -517,9 +529,9 @@ final class WP_Strip_Image_Metadata {
 		);
 
 		// When using the custom bulk strip image metadata action, show how many images were modified.
-		$img_count = isset( $_GET['bulk_wp_strip_img_meta'] ) ? intval( $_GET['bulk_wp_strip_img_meta'] ) : null; 
-		$path_count = isset( $_GET['bulk_wp_strip_overall'] ) ? intval( $_GET['bulk_wp_strip_overall'] ) : null; 
-		$stripped_count = isset( $_GET['bulk_wp_strip_number_stripped'] ) ? intval( $_GET['bulk_wp_strip_number_stripped'] ) : null; 
+		$img_count = isset( $_GET['bulk_wp_strip_img_meta'] ) ? intval( $_GET['bulk_wp_strip_img_meta'] ) : null;
+		$path_count = isset( $_GET['bulk_wp_strip_overall'] ) ? intval( $_GET['bulk_wp_strip_overall'] ) : null;
+		$stripped_count = isset( $_GET['bulk_wp_strip_number_stripped'] ) ? intval( $_GET['bulk_wp_strip_number_stripped'] ) : null;
 
 		if ( $img_count ) {
 			add_action(
@@ -953,6 +965,11 @@ final class WP_Strip_Image_Metadata {
 	 */
 	public static function handle_bulk_strip_action( string $redirect_url, string $action, array $ids ) :string {
 		if ( $action !== 'wp_strip_image_metadata' ) {
+			return $redirect_url;
+		}
+
+		// verify the nonce for bulk-media
+		if ( \wp_verify_nonce( $_REQUEST['_wpnonce'], 'bulk-media' ) !== 1 ) {
 			return $redirect_url;
 		}
 
