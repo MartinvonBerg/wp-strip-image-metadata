@@ -3,7 +3,7 @@
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Martin von Berg
@@ -124,7 +124,7 @@ final class WP_Strip_Image_Metadata {
 			<br>
 			<h1><?php esc_html_e( 'Plugin Information', 'wp-strip-image-metadata' ); ?></h1>
 			<?php
-			if ( $image_lib ) {
+			if ( ! empty($image_lib) ) {
 				echo esc_html(
 					sprintf(
 					/* translators: %s is the image processing library name and version active on the site */
@@ -387,7 +387,7 @@ final class WP_Strip_Image_Metadata {
 		$settings = self::get_plugin_settings();
 
 		// If no supported image processing libraries are found, show an admin notice and bail.
-		if ( ! self::has_supported_image_library() ) {
+		if ( self::has_supported_image_library() === '' ) {
 			add_action(
 				'admin_notices',
 				function () {
@@ -411,7 +411,7 @@ final class WP_Strip_Image_Metadata {
 						'admin_notices',
 						function () {
 							?>
-					<div class="notice notice-error is-dismissible">
+					<div class="notice notice-warning is-dismissible">
 						<p><?php esc_html_e( 'WP Strip Image Metadata: stripping is currently disabled.', 'wp-strip-image-metadata' ); ?></p>
 					</div>
 							<?php
@@ -582,9 +582,9 @@ final class WP_Strip_Image_Metadata {
 	/**
 	 * Check for a supported image processing library on the site.
 	 *
-	 * @return string|false The supported image library to use, or false if no support found.
+	 * @return string The supported image library to use, or false if no support found.
 	 */
-	public static function has_supported_image_library() :mixed {
+	public static function has_supported_image_library() :string {
 		// Test for Imagick support.
 		$imagick = false;
 		$webpSupported = false;
@@ -605,7 +605,6 @@ final class WP_Strip_Image_Metadata {
 
 			self::$versionString = $imagick->getVersion()['versionString'];
 			$imagick->clear();
-
 		}
 
 		if ( $imagick && $webpSupported && $versionCheck ) {
@@ -638,7 +637,7 @@ final class WP_Strip_Image_Metadata {
 			return 'Gmagick';
 		}
 
-		return false;
+		return '';
 	}
 
 	/**
@@ -660,7 +659,7 @@ final class WP_Strip_Image_Metadata {
 		}
 		// check for image converter support
 		$img_lib = self::has_supported_image_library();
-		if ( ! $img_lib ) {
+		if ( empty( $img_lib ) ) {
 			self::logger( 'WP Strip Image Metadata: No Image Handler defined' );
 			return false;
 		}

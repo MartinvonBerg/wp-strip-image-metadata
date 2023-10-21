@@ -4,8 +4,8 @@ Contributors: martinvonberg
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CQA6XZ7LUMBJQ
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
-Tested up to: 6.3
-Stable tag: 1.2.0
+Tested up to: 6.4
+Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -131,6 +131,9 @@ By default the plugin will process jpg/jpeg and webp files.
 First Release. No need to upgrade now.
 
 == Changelog ==
+
+### 1.2.0 - 2023-10-21
+- Tested with WordPress 6.4. Bugfix for PHP 7.4 (mixed return type was wrong)
 
 ### 1.2.0 - 2023-08-09
 - Tested with WordPress 6.3. First upload to Plugin-Direcotory.
