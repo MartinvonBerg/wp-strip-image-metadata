@@ -4,7 +4,7 @@ Contributors: martinvonberg
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CQA6XZ7LUMBJQ
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
-Tested up to: 6.4
+Tested up to: 6.5
 Stable tag: 1.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
