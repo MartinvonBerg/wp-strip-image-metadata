@@ -108,6 +108,12 @@ By default the plugin will process jpg/jpeg and webp files.
 
 ## Changelog
 
+### 1.3.0 - 2024-07-17
+- Tested with WordPress 6.6. 
+
+### 1.3.0 - 2024-04-03
+- Tested with WordPress 6.5. 
+
 ### 1.2.0 - 2023-10-21
 - Tested with WordPress 6.4. Bugfix for PHP 7.4 (mixed return type was wrong)
 
