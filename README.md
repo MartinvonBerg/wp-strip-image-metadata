@@ -1,4 +1,4 @@
-# Strip Image Metadata for JPG and WEBP Files
+# Strip Image Metadata for AVIF, JPG and WEBP Files
 
 ## Disclaimer
 
@@ -8,8 +8,8 @@ https://wordpress.org/plugins/wp-strip-image-metadata/
 This Plugin extends the Functionality of "WP Strip Image Metadata" with the following Functions:
 
 ## Extended Functionality
-- Handle WEBP-Images, too. 
-- set / add / change Copyright, Artist or Credit Information in JPG and WEBP images Files.
+- Handle AVIF and WEBP-Images, too. 
+- set / add / change Copyright, Artist or Credit Information in AVIF, JPG and WEBP images Files.
 - Set an upper Size Limit for the Stripping. All Files with Width greater than Size Limit won't be stripped.
 - Show some more Information in the Image Edit Panel
 - Set a Minimum version for Imagick (3.4.4) and Gmagick (2.0.5) to handle files at all. Gmagick is still limited in functionality.
@@ -18,11 +18,12 @@ This Plugin extends the Functionality of "WP Strip Image Metadata" with the foll
 Both Imagick and Gmagick do not allow to set EXIF-Metadata directly. The author of this plugin does not know another PHP or WordPress Function with appropriate license to set metadata in an Image File. So a Template File is used that has to be prepared by the user. It's only possible to use one template File for one Artist, only.
 > ! The Plugin uses one Template File for the whole site. So, if you are on a Multi-User-Site this Plugin is not for you.
 
-1. Prepare a JPG and WEBP File with very small size, e.g. 100x100 or so. Image dimensions do not matter, here.
-2. Strip all Metadata with exiftool (current version 12.6.0.0 writes webp, too): 
+1. Prepare a JPG, WEBP and AVIF File with very small size, e.g. 100x100 or so. Image dimensions do not matter, here.
+2. Strip all Metadata with exiftool (current version writes avif and webp, too): 
 ``` shell 
 exiftool.exe -all= ./yourfile.jpg -o copyright.jpg
 exiftool.exe -all= ./anotherfile.webp -o copyright.webp
+exiftool.exe -all= ./aviffile.jpg -o copyright.avif
 ```
 
 3. Add the Copyright (or other) EXIF-Metadata you prefer with Exiftool like so
@@ -79,7 +80,7 @@ In WP Admin, from your Media library you can select an image and click "Edit" (i
 
 On the Edit page for the image, there will be an admin notice at the top with the "expand for image EXIF data" text.
 The Top Line shows, without expansion, the number of bytes for the different file sizes.
-This should work for jpg/jpeg and webp files, but other image types may not display EXIF info.
+This should work for jpg/jpeg, webp and avif files, but other image types may not display EXIF info.
 
 You might try uploading a test image with the "Image Metadata Stripping" setting disabled, and then the same image again with the setting enabled to view the difference.
 
@@ -93,7 +94,7 @@ No, removing image metadata is permanent. If you would like the metadata kept, y
 
 ### What file types does this plugin work for?
 
-By default the plugin will process jpg/jpeg and webp files.
+By default the plugin will process jpg/jpeg, webp and avif files.
 
 ### What do the plugin settings do?
 
@@ -105,6 +106,12 @@ By default the plugin will process jpg/jpeg and webp files.
 * Log Errors: whether to log error output which can be helpful for debugging purposes.
 
 ## Changelog
+
+### 1.4.0 - 2024-10-21
+- added AVIF-support, increased minimum PHP-version following the WP recommendation, 
+- Minor PHP Bugfixes, e.g. updated focal length extraction for full-frame cameras.
+- Changed the Imagick / GD check for supported files. Removed the version check completely.
+- Tested with WordPress 6.6.2
 
 ### 1.3.0 - 2024-07-17
 - Tested with WordPress 6.6. 

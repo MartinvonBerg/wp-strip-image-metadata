@@ -3,9 +3,9 @@
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.0
  * Author: Martin von Berg
  * Author URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * License: GPL-2.0
@@ -55,7 +55,6 @@ final class WP_Strip_Image_Metadata {
 	public static array $image_file_types = [
 		'image/jpg',
 		'image/jpeg',
-		'image/webp'
 	];
 
 	/**
@@ -106,8 +105,10 @@ final class WP_Strip_Image_Metadata {
 		$image_lib = self::has_supported_image_library();
 		$pathToCopyrightFile_webp = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
 		$pathToCopyrightFile_jpg = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
+		$pathToCopyrightFile_avif = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.avif';
 		$exif_jpg = \is_file( $pathToCopyrightFile_jpg) ? \mvbplugins\stripmetadata\getJpgMetadata( $pathToCopyrightFile_jpg) : [];
 		$exif_webp = \is_file( $pathToCopyrightFile_webp) ? \mvbplugins\stripmetadata\getWebpMetadata( $pathToCopyrightFile_webp) : [];
+		$exif_avif = \is_file( $pathToCopyrightFile_avif) ? \mvbplugins\stripmetadata\getAvifMetadata( $pathToCopyrightFile_avif) : [];
 		$exif_to_print = ['artist', 'copyright', 'credit'];
 
 		?>
@@ -128,10 +129,21 @@ final class WP_Strip_Image_Metadata {
 				echo esc_html(
 					sprintf(
 					/* translators: %s is the image processing library name and version active on the site */
-						__( 'Compatible image processing library active: %s. Webp is supported. PHP-Library is: %s', 'wp-strip-image-metadata' ),
+						__( 'Compatible image processing library active: %s. PHP-Library is: %s', 'wp-strip-image-metadata' ),
 						$image_lib . ' ' . phpversion( $image_lib ), self::$versionString
 					)
 				);
+				self::$image_file_types = array_unique( self::$image_file_types );
+				$formats = implode_all(', ', self::$image_file_types);
+				$formats = str_replace( 'image/', '', $formats );
+				$formats = strtoupper( $formats );
+				?>
+				<br>
+				<?php
+				esc_html_e( 'Supported image formats: ', 'wp-strip-image-metadata' );
+				/* translators: The $formats string is a list of supported image formats and therefore not to translate. */
+				echo esc_html( $formats );
+				
 			} else {
 				esc_html_e( 'WP Strip Image Metadata: compatible image processing library not found. This plugin requires the "Imagick" or "Gmagick" PHP extension to function - please ask your webhost or system administrator if either can be enabled.', 'wp-strip-image-metadata' );
 			}
@@ -174,6 +186,26 @@ final class WP_Strip_Image_Metadata {
 			foreach ( $exif_to_print as $key) {
 				if (\key_exists($key, $exif_webp)) {
 					?><p><?php echo esc_attr( $key . ' : ' . $exif_webp[$key] ); ?></p><?php
+				}
+			};
+			?>
+
+			<h4><?php esc_html_e( '- in copyright.avif', 'wp-strip-image-metadata' ); ?></h4>
+
+			<p>
+			<?php
+			if ( \is_file( $pathToCopyrightFile_avif) ) {
+				echo \esc_attr( 'Path: ' . $pathToCopyrightFile_avif);
+			} else {
+				esc_html_e( 'File copyright.avif not found', 'wp-strip-image-metadata' );
+			}
+			?>
+			</p>
+
+			<?php
+			foreach ( $exif_to_print as $key) {
+				if (\key_exists($key, $exif_avif)) {
+					?><p><?php echo esc_attr( $key . ' : ' . $exif_avif[$key] ); ?></p><?php
 				}
 			};
 			?>
@@ -466,7 +498,16 @@ final class WP_Strip_Image_Metadata {
 						self::logger( 'WP Strip Image Metadata: error reading webp-EXIF data: ' . $e->getMessage() );
 					}
 
-				} else {return;}
+				} elseif ( $is_image && $pathToOriginalImage !== false  && $mime === 'image/avif' ) {
+
+					try {
+						$exif = \mvbplugins\stripmetadata\getAvifMetadata( $pathToOriginalImage );
+					} catch ( \Exception $e ) {
+						self::logger( 'WP Strip Image Metadata: error reading webp-EXIF data: ' . $e->getMessage() );
+					}
+
+				}
+				else {return;}
 
 				$allsizes = '';
 				foreach ( $paths as $key => $path) {
@@ -475,7 +516,10 @@ final class WP_Strip_Image_Metadata {
 						if ( \mvbplugins\stripmetadata\implode_all( ' ', $exifData) === " -- -- -- -- ---    0 notitle     ") {$exifData = '';}; 
 					} elseif ( $mime === 'image/webp' ) {
 						$exifData = \mvbplugins\stripmetadata\getWebpMetadata( $path );
-					} else { $exifData = []; }
+					} elseif ( $mime === 'image/avif' ) {
+						$exifData = \mvbplugins\stripmetadata\getAvifMetadata( $path );
+					}
+					else { $exifData = []; }
 	
 					$filesize = self::filesize_formatted( $path);
 					$size = \strlen( \mvbplugins\stripmetadata\implode_all( ' ', $exifData ) );
@@ -585,55 +629,38 @@ final class WP_Strip_Image_Metadata {
 	 * @return string The supported image library to use, or false if no support found.
 	 */
 	public static function has_supported_image_library() :string {
+		
 		// Test for Imagick support.
-		$imagick = false;
-		$webpSupported = false;
-		$versionCheck = false;
-		$minVersion = '3.4.4';
-
 		if ( extension_loaded( 'imagick' ) && class_exists( 'Imagick', false ) ) {
-			$imagick = true;
 			
-			$actVersion = phpversion( 'Imagick' );
-			if ( ! $actVersion) { $actVersion = '0.0.0';}
-			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
-
-			$imagick = new \Imagick();
-			$formats = $imagick->queryFormats();
+			$imagick = new \Imagick(); 
+			$formats = $imagick->queryFormats(); // it is intentionally not to use Imagick::queryFormats() statically
+			$formats = array_map( 'strtolower', $formats );
 			$pos = \stripos( implode_all(' ', $formats), 'webp');
-			if ( $pos > 1) { $webpSupported = true;}
+			if ( $pos > 1) { self::$image_file_types[] = 'image/webp';}
 
-			self::$versionString = $imagick->getVersion()['versionString'];
+			$pos = \stripos( implode_all(' ', $formats), 'avif'); 
+			if ( $pos > 1) { self::$image_file_types[] = 'image/avif';} 
+
+			self::$versionString = $imagick->getVersion()['versionString']; // it is intentionally not to use Imagick::getVersion statically
 			$imagick->clear();
-		}
-
-		if ( $imagick && $webpSupported && $versionCheck ) {
 			return 'Imagick';
 		}
 
 		// Test for Gmagick support.
-		$gmagick = false;
-		$webpSupported = false;
-		$versionCheck = false;
-		$minVersion = '2.0.5';
-
 		if ( extension_loaded( 'gmagick' ) && class_exists( 'Gmagick', false ) ) {
-			$gmagick = true;
-
-			$actVersion = phpversion( 'Gmagick' );
-			if ( ! $actVersion) { $actVersion = '0.0.0';}
-			$versionCheck = \version_compare( $actVersion, $minVersion, '>=');
-
+			
 			$imagick = new \Gmagick();
-			$formats = $imagick->queryFormats();
+			$formats = $imagick->queryFormats(); // it is intentionally not to use Imagick::queryFormats() statically
+			$formats = array_map( 'strtolower', $formats );
 			$pos = \stripos( implode_all(' ', $formats), 'webp');
-			if ( $pos > 1) { $webpSupported = true;}
+			if ( $pos > 1) { self::$image_file_types[] = 'image/webp'; }
+			
+			$pos = \stripos( implode_all(' ', $formats), 'avif'); 
+			if ( $pos > 1) { self::$image_file_types[] = 'image/avif';}
 
-			self::$versionString = $imagick->getVersion()['versionString'];
+			self::$versionString = $imagick->getVersion()['versionString']; // it is intentionally not to use Imagick::getVersion statically
 			$imagick->clear();
-		}
-
-		if ( $gmagick && $webpSupported && $versionCheck  ) {
 			return 'Gmagick';
 		}
 
@@ -648,7 +675,7 @@ final class WP_Strip_Image_Metadata {
 	 * @return bool the result as boolean. True on success.
 	 */
 	public static function strip_image_metadata( string $file ) :bool {
-		$mime = mime_content_type( $file );
+		$mime = \mvbplugins\stripmetadata\_mime_content_type( $file );
 		$result = false;
 
 		// Check for supported file type.
@@ -679,7 +706,10 @@ final class WP_Strip_Image_Metadata {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
 			} elseif ($mime === 'image/webp') {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
-			} else { $pathToTemplateFile = ''; }
+			} elseif ($mime === 'image/avif') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.avif';
+			}
+			else { $pathToTemplateFile = ''; }
 
 			if (!\file_exists($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
@@ -788,7 +818,10 @@ final class WP_Strip_Image_Metadata {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.jpg';
 			} elseif ($mime === 'image/webp') {
 				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.webp';
-			} else { $pathToTemplateFile = '';}
+			} elseif ($mime === 'image/avif') {
+				$pathToTemplateFile = __DIR__ . \DIRECTORY_SEPARATOR . 'images' . \DIRECTORY_SEPARATOR . 'copyright.avif';
+			}
+			else { $pathToTemplateFile = '';}
 
 			if (!\file_exists($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');

@@ -5,7 +5,8 @@
  *
  * Description: Extract Metadata from both Webp and JPG-files. Note: The result array of the both main functions is structurally not identical. Although identended this requirement was not reached. TODO for a future update. The requirement was: "The exif data a array similar to the JSON that is provided via the REST-API".
  *
- * Requires PHP: 7.4
+ * Requires PHP: 8.0
+ * Requires at least: 6.0
  * Author: Martin von Berg
  * Author URI: https://www.berg-reise-foto.de/software-wordpress-lightroom-plugins/wordpress-plugins-fotos-und-gpx/
  * License: GPL-2.0
@@ -25,6 +26,35 @@ const VP8X_EXIF = 8;
 const VP8X_XMP = 4;
 const VP8X_ANIM = 2;
 const EXIF_OFFSET = 8;
+
+/**
+ * Determine the MIME type of a file based on its content.
+ * 
+ * This function checks the MIME type using the PHP built-in mime_content_type function.
+ * If the MIME type is not found or is 'application/octet-stream', it tries to determine the MIME type based on the file extension.
+ * If the file extension is 'avif', the function returns 'image/avif' as the MIME type.
+ * Converning AVIF-files, this function relies on the assumption that the file extension is correctly set to avif.
+ * 
+ * @param string $file The path to the file for which the MIME type needs to be determined.
+ * @return string The determined MIME type of the file.
+ */
+function _mime_content_type( string $file ) 
+{ 
+	$mime = '';
+	$phpMime = mime_content_type( $file );
+
+	if ( ! empty( $phpMime ) && ( strpos( $phpMime, 'image/' ) !== false) ) {
+		$mime = $phpMime;
+	} elseif (! empty( $phpMime ) && $phpMime == 'application/octet-stream' ) {
+		$path_parts = pathinfo( $file );
+		$ext = $path_parts['extension'];
+		if ( $ext == 'avif' ) {
+			$mime = 'image/avif';
+		}
+
+	}
+	return $mime;
+}
 
 /**
  * read out the required metadata from a jpg-file on the server. The result provides some more data than required.
@@ -63,7 +93,10 @@ function getJpgMetadata( string $filename ) :array
 	if (isset($Exif["EXIF"]["FocalLengthIn35mmFilm"])) {
 		//if (array_key_exists('FocalLengthIn35mmFilm', $Exif["EXIF"])) {
 		$focal = $Exif["EXIF"]["FocalLengthIn35mmFilm"];
-	} else {
+	} else if (isset($Exif["EXIF"]["FocalLength"])) {
+		$focal = intval( $Exif["EXIF"]["FocalLength"], 10);
+	}
+	 else {
 		$focal = '--';
 	}
 
@@ -153,14 +186,97 @@ function getWebpMetadata( string $filename )
 }
 
 /**
+ * Read out the required metadata from a Avif-file on the server. The result provides some more data than required.
+ * Only tested for Nikon D7500 images after handling with Lightroom 6.14 and converson with imagemagick. Not done for all cameras that are around.
+ * Title, caption and keywords are not found in EXIF-data. These are taken from XMP-data. 
+ * This keys are set in the returned array: 
+ * credit, copyright, title, caption, camera, keywords, GPS, make, 
+ * orientation, lens, iso, exposure-time, aperture, focal-length, created-timestamp.
+ * alt and description are not set.
+ * 
+ * @param string $filename The complete path to the file in the directory.
+ * @return array The exif data array similar to the JSON that is provided via the REST-API.
+ */
+function getAvifMetadata( string $filename ) 
+{	
+	$image = new \Imagick($filename);
+
+	// Metadaten abrufen (EXIF, XMP, ICC)
+	$chunks = $image->getImageProfiles('*', true); // holt alle profile
+	if ( ! $chunks ) {
+		return [];
+	}
+
+	foreach ( $chunks as $key => $chunk ) {
+		switch ( $key ) {
+			
+			case 'exif':
+				#$exif2 = file_get_contents( $filename, false, null, $chunk['start'], $chunk['start']+$chunk['size'] );
+				$new = str_replace('Exif','Exif45',$chunk);
+				$meta = get_exif_meta( $new );
+				if ( isset( $meta['copyright'] ) ) $meta['credit'] = $meta['copyright'];
+				if ( isset( $meta['camera']) && isset( $meta['lens']) ) {$meta['camera'] = $meta['camera'] . ' + ' . $meta['lens'];}
+				break;
+			case 'xmp':
+				#$xmp2 = file_get_contents( $filename, false, null, $chunk['start']+8, $chunk['start']+$chunk['size'] );
+				$p = xml_parser_create();
+				xml_parser_set_option($p,XML_OPTION_SKIP_WHITE,1);
+				xml_parse_into_struct($p, $chunk, $vals, $index);
+				xml_parser_free($p);
+				
+				$title = '';
+
+				if ( isset( $index["DC:TITLE"] ) ) {
+					$nr = (int) ($index["DC:TITLE"][1] + $index["DC:TITLE"][0]) / 2;
+					$title = $vals[ $nr ]["value"];
+				}
+				$title != '' ? $meta[ 'title' ] = $title : $meta[ 'title' ] = 'notitle';
+
+				if ( isset( $index["DC:DESCRIPTION"] ) ) {
+					$nr = (int) ($index["DC:DESCRIPTION"][1] + $index["DC:DESCRIPTION"][0]) / 2;
+					$caption = $vals[ $nr ]["value"];
+					$meta[ 'caption' ] = $caption;
+				}
+				//$caption != '' ? $meta[ 'caption' ] = $caption : $meta[ 'caption' ] = '';
+				/*
+				if ( isset( $vals[2]["attributes"]["AUX:LENS"] ) ) {
+					$lens = $vals[2]["attributes"]["AUX:LENS"];
+					$meta[ 'camera' ] = $meta[ 'camera' ] . ' + ' . $lens;
+				} else {
+					$meta[ 'camera' ] = '---';
+				}
+				*/
+				$tags = [];
+
+				if ( isset( $index["RDF:BAG"] ) ) {
+					$tagstart = $index["RDF:BAG"][0] +1;
+					$tagend   = $index["RDF:BAG"][1] -1;
+					while ( $tagstart <= $tagend ) {
+						$tag = $vals[ $tagstart ]["value"];
+						$tagstart += 1;
+						$tags[] = $tag;
+					}
+				}
+
+				$meta[ 'keywords' ] = $tags; 
+
+				break;
+		}
+	}
+	
+	$meta['meta_version'] = WEBP_VERSION;
+	return $meta;
+}
+
+/**
  * Extract EXIF and XMP metadata from a file
  *
  * @param  string $filename the file to analyse
  * @return false|array array with metadata of false on failure
  */
-function extractMetadata( string $filename ) 
+function extractMetadata( string $filename )
 {
-	
+
 	$info = findChunksFromFile( $filename, 100 ); //RiffExtractor 
 	if ( $info === false ) {
 		return false;
@@ -447,7 +563,7 @@ function get_exif_meta( string $buffer )
 			'comps'=> 1, // Number of components per data-field 
 			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
 		), 
-		/*
+		
 		'0x0131' => array(
 			'text' => 'software',
 			'type' => 2, // ascii string
@@ -462,7 +578,7 @@ function get_exif_meta( string $buffer )
 			'comps'=> 1, // Number of components per data-field 
 			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
 		),
-		*/
+		
 		'0x0112' => array(
 			'text' => 'orientation',
 			'type' => 3, // unsigned short
@@ -542,7 +658,7 @@ function get_exif_meta( string $buffer )
 			'comps'=> 2, // Number of components per data-field 
 			'offs' => 0, // offset for type 2, 5, 10, 12
 		),
-		/*
+	
 		'0xA431' => array(
 			'text' => 'serial',
 			'type' => 2, // ascii string
@@ -550,6 +666,7 @@ function get_exif_meta( string $buffer )
 			'comps'=> 1, // Number of components per data-field 
 			'offs' => -1, // offset for type 2, 5, 10, 12: taken from data field
 		), 
+		/*
 		'0xA433' => array(
 			'text' => 'lensmake',
 			'type' => 2, // ascii string
@@ -865,19 +982,19 @@ function binrevert (string $binary) :string
 			$val = dechex( \intval( $binary ) ) ;
 			$bin = '0x' . \strtoupper( sprintf('%02s', $val ) );
 			return $bin;
-			break;
+			
 		case 2:
 			$val = dechex( unpack( 'v', $binary )[1]);
 			$bin = '0x' . \strtoupper( sprintf('%04s', $val ) );
 			return $bin;
-			break;
+			
 		case 4:
 			$val = dechex( unpack( 'V', $binary )[1]);
 			$bin = '0x' . \strtoupper( sprintf('%08s', $val ) );
 			return $bin;
-			break;
+			
 		default:
 			return '0x00';
-			break;
+			
 	}
 }
