@@ -3,7 +3,7 @@
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.4.0
+ * Version: 1.4.1
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Martin von Berg
@@ -669,7 +669,7 @@ final class WP_Strip_Image_Metadata {
 
 	/**
 	 * Strip metadata from an image.
-	 *
+	 * TODO: After stripping metadata the filesize stored in the database is not updated and therefore wrong!
 	 * @param string $file The file path (not URL) to an uploaded media item.
 	 *
 	 * @return bool the result as boolean. True on success.
@@ -711,7 +711,7 @@ final class WP_Strip_Image_Metadata {
 			}
 			else { $pathToTemplateFile = ''; }
 
-			if (!\file_exists($pathToTemplateFile)) {
+			if (!\is_file($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
 				return false;
 			}
@@ -823,7 +823,7 @@ final class WP_Strip_Image_Metadata {
 			}
 			else { $pathToTemplateFile = '';}
 
-			if (!\file_exists($pathToTemplateFile)) {
+			if (!\is_file($pathToTemplateFile)) {
 				self::logger('WP Strip Image Metadata: File ' . $pathToTemplateFile . ' not found. Skipping Strip-Metadata.');
 				return false;
 			}
@@ -1116,6 +1116,9 @@ final class WP_Strip_Image_Metadata {
 	 */
 	private static function filesize_formatted( string $path ) :string
 	{
+		if (!is_file($path)) {
+			return "File not found";
+		}
 		$size = filesize($path);
 		$units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 		$power = $size > 0 ? floor( log($size, 1024) ) : 0;

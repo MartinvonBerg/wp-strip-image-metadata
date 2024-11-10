@@ -107,6 +107,9 @@ By default the plugin will process jpg/jpeg, webp and avif files.
 
 ## Changelog
 
+### 1.4.1 - 2024-11-08
+- Tested with WordPress 6.7. Minor PHP Bugfix.
+
 ### 1.4.0 - 2024-10-21
 - added AVIF-support, increased minimum PHP-version following the WP recommendation, 
 - Minor PHP Bugfixes, e.g. updated focal length extraction for full-frame cameras.

@@ -41,6 +41,9 @@ const EXIF_OFFSET = 8;
 function _mime_content_type( string $file ) 
 { 
 	$mime = '';
+	if ( !is_file( $file ) ) {
+		return $mime;
+	}
 	$phpMime = mime_content_type( $file );
 
 	if ( ! empty( $phpMime ) && ( strpos( $phpMime, 'image/' ) !== false) ) {
@@ -175,6 +178,7 @@ function getJpgMetadata( string $filename ) :array
  */
 function getWebpMetadata( string $filename ) 
 {
+	// TODO: Vereinfachung möglich mit $image->getImageProperies()
 	$parsedWebPData = extractMetadata( $filename );
 	if ( ! $parsedWebPData ) {
 		//return BROKEN_FILE;
@@ -199,9 +203,13 @@ function getWebpMetadata( string $filename )
  */
 function getAvifMetadata( string $filename ) 
 {	
+	if ( !is_file( $filename ) ) {
+		return [];
+	}
 	$image = new \Imagick($filename);
 
 	// Metadaten abrufen (EXIF, XMP, ICC)
+	// TODO: Vereinfachung möglich mit $image->getImageProperies()
 	$chunks = $image->getImageProfiles('*', true); // holt alle profile
 	if ( ! $chunks ) {
 		return [];
@@ -465,6 +473,9 @@ function decodeExtendedChunkHeader( string $header ) :array
  */
 function findChunksFromFile( string $filename, int $maxChunks = -1 ) 
 {
+	if ( !is_file( $filename ) ) {
+		return false;
+	}
 	$file = fopen( $filename, 'rb' );
 	$info = findChunks( $file, $maxChunks );
 	fclose( $file );
@@ -474,12 +485,15 @@ function findChunksFromFile( string $filename, int $maxChunks = -1 )
 /**
  * findchunks (EXIF-Data) in a given file
  *
- * @param resource|string $filename the file to analyse
+ * @param resource|string $file the file to analyse
  * @param integer $maxChunks max number of chunks
  * @return false|array fals on failure or array with extracted chunks
  */
 function findChunks( $file, int $maxChunks = -1 ) 
 {
+	if ( !is_resource( $file ) ) {
+			return false;
+	}
 	$riff = fread( $file, 4 );
 	if ( $riff !== 'RIFF' ) {
 		return false;
