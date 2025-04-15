@@ -107,6 +107,9 @@ By default the plugin will process jpg/jpeg, webp and avif files.
 
 ## Changelog
 
+### 1.4.1 - 2025-04-15
+- Tested with WordPress 6.8. Works. No Changes.
+
 ### 1.4.1 - 2024-11-08
 - Tested with WordPress 6.7. Minor PHP Bugfix.
 
