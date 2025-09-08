@@ -5,7 +5,7 @@ Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_i
 Tags: metadata, image, exif, privacy, strip
 Requires at least: 6.0
 Tested up to: 6.8
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -132,6 +132,9 @@ By default the plugin will process jpg/jpeg, avif and webp files.
 No need to upgrade right now, if you don't use Images in Avif-Format.
 
 == Changelog ==
+
+### 1.4.2 - 2025-09-08
+- Minor update for PHP deprecation message. Tested with WordPress 6.8.2.
 
 ### 1.4.1 - 2025-04-15
 - Tested with WordPress 6.8. Works. No Changes.

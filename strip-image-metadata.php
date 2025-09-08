@@ -3,7 +3,7 @@
  * Plugin Name: Strip Image Metadata for JPG and WEBP
  * Plugin URI: https://github.com/MartinvonBerg/wp-strip-image-metadata
  * Description: Strip image metadata from JPGs and WEBPs on upload or via bulk action, and view image EXIF data.
- * Version: 1.4.1
+ * Version: 1.4.2
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Martin von Berg
@@ -384,7 +384,7 @@ final class WP_Strip_Image_Metadata {
 							type="radio"
 							<?php echo esc_attr( checked( $setting_value, $item, false ) ); ?>
 							value="<?php echo esc_attr( $item ); ?>"
-							name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
+							name="<?php echo esc_attr( 'wp_strip_image_metadata_settings[' . $setting[0] . ']' ); ?>"
 						/>
 						<?php
 						if ( $item === 'enabled' ) {
@@ -401,8 +401,8 @@ final class WP_Strip_Image_Metadata {
 			// output the number input for sizelimit.
 			?>
 			<input type="number" min="0" max="10000" step="1" 
-				name="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>"
-				id="<?php echo esc_attr( "wp_strip_image_metadata_settings[${setting[0]}]" ); ?>" 
+				name="<?php echo esc_attr( 'wp_strip_image_metadata_settings[' . $setting[0] . ']' ); ?>"
+				id="<?php echo esc_attr( 'wp_strip_image_metadata_settings[' . $setting[0] . ']' ); ?>" 
 				value="<?php echo esc_attr( $setting_value ); ?>">
 			<label>Min: 0, Max: 10000. <?php esc_html_e('Set the Maximum Width of Image for Stripping Metadata. 0 means stripping no image at all. 10000 means stripping all images','wp-strip-image-metadata' );?>.</label>
 			<?php
